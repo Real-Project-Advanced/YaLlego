@@ -5,7 +5,14 @@ import { logoutAction } from '@/modules/auth/actions/auth.actions';
 export async function Header() {
   const user = await getCurrentUser();
 
-  const dashboardLink = user?.role === 'SUPER_ADMIN' ? '/admin' : '/';
+  const dashboardLink =
+    user?.role === 'SUPER_ADMIN'
+      ? '/admin'
+      : user?.role === 'DRIVER'
+        ? '/driver'
+        : user
+          ? '/user'
+          : '/';
 
   return (
     <header className="border-b border-blue-100 bg-white/90 backdrop-blur">

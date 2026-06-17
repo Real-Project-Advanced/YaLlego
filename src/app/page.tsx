@@ -1,28 +1,28 @@
-import Link from "next/link";
-import { Header } from "@/components/common/Header";
+import Link from 'next/link';
+import { Header } from '@/components/common/Header';
 
 const routeCards = [
   {
-    title: "Universidad de Antioquia a Poblado",
-    time: "34 min",
-    detail: "Metro A + alimentador integrado",
+    title: 'Universidad de Antioquia a Poblado',
+    time: '34 min',
+    detail: 'Metro A + alimentador integrado',
   },
   {
-    title: "Laureles a Ruta N",
-    time: "28 min",
-    detail: "Bus circular + caminata segura",
+    title: 'Laureles a Ruta N',
+    time: '28 min',
+    detail: 'Bus circular + caminata segura',
   },
   {
-    title: "Belen a Estadio",
-    time: "22 min",
-    detail: "Ruta urbana directa",
+    title: 'Belen a Estadio',
+    time: '22 min',
+    detail: 'Ruta urbana directa',
   },
 ];
 
 const features = [
-  "Comparacion de rutas por tiempo, costo y transbordos",
-  "Alertas de congestiones, cierres y cambios de servicio",
-  "Opciones priorizadas para estudiantes y trabajadores",
+  'Comparacion de rutas por tiempo, costo y transbordos',
+  'Alertas de congestiones, cierres y cambios de servicio',
+  'Opciones priorizadas para estudiantes y trabajadores',
 ];
 
 export default function Home() {
@@ -39,19 +39,18 @@ export default function Home() {
             Nexthus te muestra la mejor ruta para llegar a tu destino.
           </h1>
           <p className="mt-6 max-w-xl text-lg leading-8 text-slate-700">
-            Planea trayectos dentro del Valle de Aburra con rutas sugeridas,
-            tiempos estimados, conexiones y alternativas pensadas para moverte
-            por Medellin con mas confianza.
+            Planea trayectos dentro del Valle de Aburra con rutas sugeridas, tiempos estimados,
+            conexiones y alternativas pensadas para moverte por Medellin con mas confianza.
           </p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <Link
-              href="/auth/register"
+              href="/register"
               className="rounded-lg bg-blue-700 px-6 py-3 text-center text-sm font-bold text-white transition hover:bg-blue-800"
             >
               Crear cuenta gratis
             </Link>
             <Link
-              href="/auth/login"
+              href="/login"
               className="rounded-lg border border-blue-200 bg-white px-6 py-3 text-center text-sm font-bold text-blue-700 transition hover:border-blue-300 hover:bg-blue-50"
             >
               Iniciar sesion
@@ -64,9 +63,7 @@ export default function Home() {
           <div className="relative overflow-hidden rounded-2xl border border-blue-100 bg-white shadow-2xl shadow-blue-200/60">
             <div className="bg-blue-700 px-5 py-4 text-white">
               <p className="text-sm font-bold uppercase">Ruta recomendada</p>
-              <h2 className="mt-2 text-2xl font-black">
-                Centro a El Poblado
-              </h2>
+              <h2 className="mt-2 text-2xl font-black">Centro a El Poblado</h2>
             </div>
             <div className="p-5">
               <div className="rounded-xl bg-slate-950 p-5 text-white">
@@ -99,9 +96,9 @@ export default function Home() {
 
               <div className="mt-5 space-y-3">
                 {[
-                  "Camina 4 min hasta la estacion",
-                  "Toma Metro linea A",
-                  "Conecta con bus integrado",
+                  'Camina 4 min hasta la estacion',
+                  'Toma Metro linea A',
+                  'Conecta con bus integrado',
                 ].map((step, index) => (
                   <div
                     key={step}
@@ -110,9 +107,7 @@ export default function Home() {
                     <span className="grid size-8 place-items-center rounded-lg bg-blue-50 text-sm font-black text-blue-700">
                       {index + 1}
                     </span>
-                    <p className="text-sm font-semibold text-slate-700">
-                      {step}
-                    </p>
+                    <p className="text-sm font-semibold text-slate-700">{step}</p>
                   </div>
                 ))}
               </div>
@@ -128,8 +123,8 @@ export default function Home() {
               Decide con datos claros antes de subirte.
             </h2>
             <p className="mt-4 text-base leading-7 text-slate-600">
-              Nexthus organiza informacion de buses, metro, caminatas y
-              transbordos para recomendar trayectos urbanos faciles de comparar.
+              Nexthus organiza informacion de buses, metro, caminatas y transbordos para recomendar
+              trayectos urbanos faciles de comparar.
             </p>
             <div className="mt-6 space-y-3">
               {features.map((feature) => (
@@ -149,15 +144,9 @@ export default function Home() {
                 key={route.title}
                 className="rounded-xl border border-blue-100 bg-white p-5 shadow-sm"
               >
-                <p className="text-3xl font-black text-blue-700">
-                  {route.time}
-                </p>
-                <h3 className="mt-4 text-base font-black text-slate-950">
-                  {route.title}
-                </h3>
-                <p className="mt-3 text-sm leading-6 text-slate-600">
-                  {route.detail}
-                </p>
+                <p className="text-3xl font-black text-blue-700">{route.time}</p>
+                <h3 className="mt-4 text-base font-black text-slate-950">{route.title}</h3>
+                <p className="mt-3 text-sm leading-6 text-slate-600">{route.detail}</p>
               </article>
             ))}
           </div>
