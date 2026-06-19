@@ -8,7 +8,7 @@ export default async function AdminDashboard() {
   const user = await getCurrentUser();
 
   if (!user) {
-    redirect('/auth/login');
+    redirect('/login');
   }
 
   if (user.role !== 'SUPER_ADMIN') {
@@ -28,9 +28,7 @@ export default async function AdminDashboard() {
         <AdminNavbar />
 
         <div className="mt-6 mb-8">
-          <h1 className="text-4xl font-black text-slate-950 mb-2">
-            Panel Administrativo
-          </h1>
+          <h1 className="text-4xl font-black text-slate-950 mb-2">Panel Administrativo</h1>
           <p className="text-slate-600">
             Bienvenido, <span className="font-bold">{user.fullname}</span>
           </p>
@@ -48,12 +46,8 @@ export default async function AdminDashboard() {
               key={stat.title}
               className={`bg-white rounded-lg shadow p-6 border-l-4 border-${stat.color}-500`}
             >
-              <p className="text-slate-600 text-sm font-semibold mb-1">
-                {stat.title}
-              </p>
-              <p className="text-3xl font-black text-slate-950">
-                {stat.value}
-              </p>
+              <p className="text-slate-600 text-sm font-semibold mb-1">{stat.title}</p>
+              <p className="text-3xl font-black text-slate-950">{stat.value}</p>
             </div>
           ))}
         </div>
@@ -64,9 +58,7 @@ export default async function AdminDashboard() {
           <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition">
             <div className="flex items-start justify-between mb-4">
               <div>
-                <h2 className="text-xl font-bold text-slate-950 mb-2">
-                  👥 Gestionar Usuarios
-                </h2>
+                <h2 className="text-xl font-bold text-slate-950 mb-2">👥 Gestionar Usuarios</h2>
                 <p className="text-slate-600 text-sm">
                   Crea, edita y administra usuarios del sistema (SUPER_ADMIN, DRIVER, USER)
                 </p>
@@ -92,9 +84,7 @@ export default async function AdminDashboard() {
           <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition">
             <div className="flex items-start justify-between mb-4">
               <div>
-                <h2 className="text-xl font-bold text-slate-950 mb-2">
-                  🚗 Gestionar Conductores
-                </h2>
+                <h2 className="text-xl font-bold text-slate-950 mb-2">🚗 Gestionar Conductores</h2>
                 <p className="text-slate-600 text-sm">
                   Registra nuevos conductores, actualiza licencias y asigna vehículos
                 </p>
@@ -120,9 +110,7 @@ export default async function AdminDashboard() {
           <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition">
             <div className="flex items-start justify-between mb-4">
               <div>
-                <h2 className="text-xl font-bold text-slate-950 mb-2">
-                  🚌 Gestionar Vehículos
-                </h2>
+                <h2 className="text-xl font-bold text-slate-950 mb-2">🚌 Gestionar Vehículos</h2>
                 <p className="text-slate-600 text-sm">
                   Registra vehículos, actualiza capacidades y controla su estado
                 </p>
@@ -148,9 +136,7 @@ export default async function AdminDashboard() {
           <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition">
             <div className="flex items-start justify-between mb-4">
               <div>
-                <h2 className="text-xl font-bold text-slate-950 mb-2">
-                  🗺️ Gestionar Rutas
-                </h2>
+                <h2 className="text-xl font-bold text-slate-950 mb-2">🗺️ Gestionar Rutas</h2>
                 <p className="text-slate-600 text-sm">
                   Crea nuevas rutas, asigna vehículos y gestiona destinos
                 </p>
@@ -175,25 +161,13 @@ export default async function AdminDashboard() {
 
         {/* Información Importante */}
         <div className="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-6">
-          <h3 className="text-lg font-bold text-blue-900 mb-3">
-            ℹ️ Información Importante
-          </h3>
+          <h3 className="text-lg font-bold text-blue-900 mb-3">ℹ️ Información Importante</h3>
           <ul className="space-y-2 text-sm text-blue-800">
-            <li>
-              ✓ Como SUPER_ADMIN tienes acceso a todas las funciones del sistema
-            </li>
-            <li>
-              ✓ Puedes crear y gestionar usuarios con diferentes roles
-            </li>
-            <li>
-              ✓ Es recomendable crear conductores primero antes de asignarlos a vehículos
-            </li>
-            <li>
-              ✓ Las rutas requieren vehículos registrados
-            </li>
-            <li>
-              ✓ Todos los cambios se registran y pueden auditarse
-            </li>
+            <li>✓ Como SUPER_ADMIN tienes acceso a todas las funciones del sistema</li>
+            <li>✓ Puedes crear y gestionar usuarios con diferentes roles</li>
+            <li>✓ Es recomendable crear conductores primero antes de asignarlos a vehículos</li>
+            <li>✓ Las rutas requieren vehículos registrados</li>
+            <li>✓ Todos los cambios se registran y pueden auditarse</li>
           </ul>
         </div>
       </div>

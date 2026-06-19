@@ -8,6 +8,12 @@ const loginSchema = z.object({
   password: z.string().min(1, 'La contraseña es obligatoria'),
 });
 
+function getPostLoginPath(role: string) {
+  if (role === 'SUPER_ADMIN') return '/admin';
+  if (role === 'DRIVER') return '/driver';
+  return '/user';
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
@@ -34,6 +40,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({
         success: true,
         user: result.data.user,
+        redirectTo: getPostLoginPath(result.data.user.role),
       });
     }
 
