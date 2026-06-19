@@ -1,6 +1,16 @@
 import Link from 'next/link';
-import { Bell, Clock3, Compass, Heart, MessageCircle, Search, UserRound } from 'lucide-react';
+import {
+  Bell,
+  Clock3,
+  Compass,
+  Heart,
+  MessageCircle,
+  Search,
+  UserRound,
+  LogOut,
+} from 'lucide-react';
 import type { UserPayload } from '@/lib/auth';
+import { logoutAction } from '@/modules/auth/actions/auth.actions';
 import { favoriteRoutes, mobilityNews, userRoutes } from '../data/user-dashboard.data';
 import { UserChatbotPanel } from './UserChatbotPanel';
 import { UserFavoritesPanel } from './UserFavoritesPanel';
@@ -50,6 +60,16 @@ export function UserDashboard({ user }: UserDashboardProps) {
                 </a>
               );
             })}
+
+            <form action={logoutAction}>
+              <button
+                type="submit"
+                className="inline-flex h-10 shrink-0 items-center gap-2 rounded-lg bg-red-600 px-4 text-sm font-black text-white transition hover:bg-red-700"
+              >
+                <LogOut size={16} />
+                Cerrar sesión
+              </button>
+            </form>
           </nav>
         </div>
       </header>
