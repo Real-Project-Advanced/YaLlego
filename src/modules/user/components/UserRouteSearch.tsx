@@ -2,21 +2,31 @@
 
 import type { FormEvent, PointerEvent } from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Capacitor } from '@capacitor/core';
+import { Geolocation } from '@capacitor/geolocation';
 import { useSearchParams } from 'next/navigation';
 import {
   ArrowUpDown,
+  BusFront,
   Clock3,
   Gauge,
+  Heart,
+  History,
   Loader2,
   LocateFixed,
+  MapPinned,
   MapPin,
   Navigation,
   Plus,
   Route,
   Search,
   Sparkles,
+  Star,
+  WalletCards,
   Trash2,
 } from 'lucide-react';
+import { BottomSheet } from './BottomSheet';
+import { FabMenu, type FabMenuItem } from './FabMenu';
 import { UserRouteMap } from './UserRouteMap';
 import {
   getStopLogoOption,
@@ -41,10 +51,19 @@ export type RoutePanelKey = 'search' | 'route' | 'metrics' | 'timeline';
 
 type FloatingPanelKey = RoutePanelKey;
 
+type MobileSheetKey = 'routes' | 'favorites' | 'history' | 'destination';
+
 const medellinViewbox = '-75.7000,6.3600,-75.4800,6.1500';
 
 const favoriteStorageKey = 'yallego.favoritePlaces';
 const publicStopsStorageKey = 'yallego.publicStops';
+
+const mobileFabItems: FabMenuItem<MobileSheetKey>[] = [
+  { key: 'routes', label: 'Rutas', icon: BusFront },
+  { key: 'favorites', label: 'Favoritos', icon: Heart },
+  { key: 'history', label: 'Historial', icon: History },
+  { key: 'destination', label: 'Destino', icon: MapPinned },
+];
 
 type StoredStop = Partial<Parada> & {
   name?: string;
@@ -111,6 +130,36 @@ const formatDistance = (distanceKm: number) =>
 
 const formatDuration = (durationMinutes: number) =>
   new Intl.NumberFormat('es-CO', { maximumFractionDigits: 0 }).format(durationMinutes);
+
+async function getCurrentCoordinates() {
+  if (Capacitor.isNativePlatform()) {
+    const permissionStatus = await Geolocation.requestPermissions();
+
+    if (permissionStatus.location === 'denied') {
+      throw new Error('No pude obtener tu ubicacion. Revisa los permisos del dispositivo.');
+    }
+
+    const position = await Geolocation.getCurrentPosition({
+      enableHighAccuracy: true,
+      timeout: 10000,
+    });
+
+    return position.coords;
+  }
+
+  return new Promise<GeolocationCoordinates>((resolve, reject) => {
+    if (!navigator.geolocation) {
+      reject(new Error('Tu navegador no permite usar ubicacion actual.'));
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => resolve(position.coords),
+      () => reject(new Error('No pude obtener tu ubicacion. Revisa los permisos del navegador.')),
+      { enableHighAccuracy: true, timeout: 10000 },
+    );
+  });
+}
 
 const mergeParadas = (...groups: Parada[][]) => {
   const stops = new Map<string, Parada>();
@@ -208,6 +257,8 @@ export function UserRouteSearch({ visiblePanels }: UserRouteSearchProps) {
   });
   const [isCreatingStop, setIsCreatingStop] = useState(false);
   const [routingStopId, setRoutingStopId] = useState('');
+  const [isMobileFabOpen, setIsMobileFabOpen] = useState(false);
+  const [activeMobileSheet, setActiveMobileSheet] = useState<MobileSheetKey | null>(null);
   const [draggedPanel, setDraggedPanel] = useState<FloatingPanelKey | null>(null);
   const [panelOffsets, setPanelOffsets] = useState<
     Record<FloatingPanelKey, { x: number; y: number }>
@@ -255,6 +306,20 @@ export function UserRouteSearch({ visiblePanels }: UserRouteSearchProps) {
     }, 0);
 
     return () => window.clearTimeout(loadTimer);
+  }, []);
+
+  useEffect(() => {
+    const desktopQuery = window.matchMedia('(min-width: 769px)');
+    const closeMobileUiOnDesktop = () => {
+      if (!desktopQuery.matches) return;
+      setActiveMobileSheet(null);
+      setIsMobileFabOpen(false);
+    };
+
+    closeMobileUiOnDesktop();
+    desktopQuery.addEventListener('change', closeMobileUiOnDesktop);
+
+    return () => desktopQuery.removeEventListener('change', closeMobileUiOnDesktop);
   }, []);
 
   const saveFavorites = (nextStops: Parada[]) => {
@@ -342,30 +407,15 @@ export function UserRouteSearch({ visiblePanels }: UserRouteSearchProps) {
     window.dispatchEvent(new CustomEvent('yallego:favorites-updated'));
   };
 
-  const getCurrentLocationPlace = useCallback(
-    () =>
-      new Promise<GeocodedPlace>((resolve, reject) => {
-        if (!navigator.geolocation) {
-          reject(new Error('Tu navegador no permite usar ubicacion actual.'));
-          return;
-        }
+  const getCurrentLocationPlace = useCallback(async () => {
+    const coords = await getCurrentCoordinates();
 
-        navigator.geolocation.getCurrentPosition(
-          (position) => {
-            resolve({
-              name: 'Mi ubicacion actual',
-              lat: position.coords.latitude,
-              lng: position.coords.longitude,
-            });
-          },
-          () => {
-            reject(new Error('No pude obtener tu ubicacion. Revisa los permisos del navegador.'));
-          },
-          { enableHighAccuracy: true, timeout: 10000 },
-        );
-      }),
-    [],
-  );
+    return {
+      name: 'Mi ubicacion actual',
+      lat: coords.latitude,
+      lng: coords.longitude,
+    };
+  }, []);
 
   const routeFromCurrentLocationToStop = useCallback(
     async (parada: Parada) => {
@@ -419,27 +469,18 @@ export function UserRouteSearch({ visiblePanels }: UserRouteSearchProps) {
     return () => window.clearTimeout(routeTimer);
   }, [favoriteToRouteId, routeFromCurrentLocationToStop]);
 
-  const useCurrentLocation = () => {
-    if (!navigator.geolocation) {
-      setError('Tu navegador no permite usar ubicacion actual.');
-      return;
-    }
-
+  const useCurrentLocation = async () => {
     setError('');
     setIsLocating(true);
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        setOrigin(
-          `${position.coords.latitude.toFixed(6)}, ${position.coords.longitude.toFixed(6)}`,
-        );
-        setIsLocating(false);
-      },
-      () => {
-        setError('No pude obtener tu ubicacion. Puedes escribir una direccion manualmente.');
-        setIsLocating(false);
-      },
-      { enableHighAccuracy: true, timeout: 10000 },
-    );
+
+    try {
+      const coords = await getCurrentCoordinates();
+      setOrigin(`${coords.latitude.toFixed(6)}, ${coords.longitude.toFixed(6)}`);
+    } catch {
+      setError('No pude obtener tu ubicacion. Puedes escribir una direccion manualmente.');
+    } finally {
+      setIsLocating(false);
+    }
   };
 
   const handleSwap = () => {
@@ -488,12 +529,77 @@ export function UserRouteSearch({ visiblePanels }: UserRouteSearchProps) {
     }
   };
 
+  const openMobileSheet = (sheet: MobileSheetKey) => {
+    setActiveMobileSheet(sheet);
+    setIsMobileFabOpen(false);
+  };
+
+  const closeMobileSheet = () => {
+    setActiveMobileSheet(null);
+  };
+
+  const mobileSheetTitle =
+    mobileFabItems.find((item) => item.key === activeMobileSheet)?.label ?? 'Nexthus';
+  const destinationName =
+    selectedRoute?.endPoint.name ?? favoriteStops[0]?.titulo ?? 'Destino cercano';
+  const destinationCategory = selectedRoute ? 'Ruta seleccionada' : 'Lugar recomendado';
+  const destinationIsOpen = new Date().getHours() < 22;
+  const routeCards = selectedRoute
+    ? [
+        {
+          id: 'active-route',
+          icon: BusFront,
+          name: 'Ruta sugerida',
+          detail: `${selectedRoute.startPoint.name} hacia ${selectedRoute.endPoint.name}`,
+          time: `${formatDuration(selectedRoute.duration)} min`,
+          price: '$3.200',
+        },
+        {
+          id: 'walk-transfer',
+          icon: Navigation,
+          name: 'Caminar + transporte',
+          detail: 'Alternativa urbana con menos transbordos',
+          time: `${Math.max(8, Math.round(selectedRoute.duration + 6))} min`,
+          price: '$2.900',
+        },
+      ]
+    : [
+        {
+          id: 'metro',
+          icon: BusFront,
+          name: 'Metro y bus',
+          detail: 'Busca origen y destino para calcular opciones reales',
+          time: '-- min',
+          price: '$--',
+        },
+      ];
+  const historyItems = selectedRoute
+    ? [
+        {
+          id: selectedRoute.id,
+          transport: 'Ruta',
+          route: selectedRoute.name,
+          time: 'Hace un momento',
+        },
+      ]
+    : [
+        {
+          id: 'empty-history',
+          transport: 'Historial',
+          route: 'Tus viajes recientes apareceran aqui',
+          time: 'Sin datos',
+        },
+      ];
+
   return (
     <section
       id="rutas"
       className="isolate relative min-h-[calc(100vh-88px)] overflow-hidden border-y border-slate-200 bg-white"
     >
-      <div className="absolute inset-0 z-0">
+      <div
+        className="absolute left-0 right-0 top-0 z-0 transition-[bottom] duration-300 ease-out md:bottom-0"
+        style={{ bottom: activeMobileSheet ? 'min(58vh, 430px)' : 0 }}
+      >
         <UserRouteMap
           routes={routes}
           selectedRouteId={selectedRouteId}
@@ -509,7 +615,7 @@ export function UserRouteSearch({ visiblePanels }: UserRouteSearchProps) {
 
       {visiblePanels.search && (
         <aside
-          className="absolute left-0 top-16 z-[1100] flex max-h-[calc(100%-64px)] w-[min(410px,calc(100vw-24px))] flex-col rounded-r-lg border border-l-0 border-slate-200 bg-white/96 p-4 shadow-2xl shadow-slate-900/10 backdrop-blur-2xl sm:top-20 lg:top-24"
+          className="absolute left-0 top-16 z-[1100] hidden max-h-[calc(100%-64px)] w-[min(410px,calc(100vw-24px))] flex-col rounded-r-lg border border-l-0 border-slate-200 bg-white/96 p-4 shadow-2xl shadow-slate-900/10 backdrop-blur-2xl md:flex lg:top-24"
           style={{
             transform: `translate(${panelOffsets.search.x}px, ${panelOffsets.search.y}px)`,
           }}
@@ -662,7 +768,7 @@ export function UserRouteSearch({ visiblePanels }: UserRouteSearchProps) {
 
       {visiblePanels.route && (
         <aside
-          className="absolute right-4 top-24 z-[1100] w-[min(340px,calc(100vw-32px))] rounded-lg border border-slate-200 bg-white/92 p-4 shadow-2xl shadow-slate-900/10 backdrop-blur-2xl sm:right-6 lg:top-28 xl:right-[470px]"
+          className="absolute right-4 top-24 z-[1100] hidden w-[min(340px,calc(100vw-32px))] rounded-lg border border-slate-200 bg-white/92 p-4 shadow-2xl shadow-slate-900/10 backdrop-blur-2xl md:block md:right-6 lg:top-28 xl:right-[470px]"
           style={{
             transform: `translate(${panelOffsets.route.x}px, ${panelOffsets.route.y}px)`,
           }}
@@ -707,7 +813,7 @@ export function UserRouteSearch({ visiblePanels }: UserRouteSearchProps) {
 
       {visiblePanels.metrics && (
         <aside
-          className="absolute bottom-5 left-1/2 z-[1100] w-[min(320px,calc(100vw-32px))] rounded-lg border border-slate-200 bg-white/92 p-4 text-center shadow-2xl shadow-slate-900/10 backdrop-blur-2xl lg:bottom-6"
+          className="absolute bottom-5 left-1/2 z-[1100] hidden w-[min(320px,calc(100vw-32px))] rounded-lg border border-slate-200 bg-white/92 p-4 text-center shadow-2xl shadow-slate-900/10 backdrop-blur-2xl md:block lg:bottom-6"
           style={{
             transform: `translate(calc(-50% + ${panelOffsets.metrics.x}px), ${panelOffsets.metrics.y}px)`,
           }}
@@ -754,7 +860,7 @@ export function UserRouteSearch({ visiblePanels }: UserRouteSearchProps) {
 
       {visiblePanels.timeline && (
         <aside
-          className="absolute bottom-4 left-4 z-[1100] max-h-[calc(100%-120px)] w-[min(420px,calc(100vw-32px))] overflow-y-auto rounded-lg border border-slate-200 bg-white/94 p-4 shadow-2xl shadow-slate-900/10 backdrop-blur-2xl sm:left-6 lg:bottom-6"
+          className="absolute bottom-4 left-4 z-[1100] hidden max-h-[calc(100%-120px)] w-[min(420px,calc(100vw-32px))] overflow-y-auto rounded-lg border border-slate-200 bg-white/94 p-4 shadow-2xl shadow-slate-900/10 backdrop-blur-2xl md:block md:left-6 lg:bottom-6"
           style={{
             transform: `translate(${panelOffsets.timeline.x}px, ${panelOffsets.timeline.y}px)`,
           }}
@@ -918,6 +1024,177 @@ export function UserRouteSearch({ visiblePanels }: UserRouteSearchProps) {
           )}
         </aside>
       )}
+
+      <FabMenu
+        items={mobileFabItems}
+        isOpen={isMobileFabOpen}
+        isRaised={Boolean(activeMobileSheet)}
+        activeItem={activeMobileSheet}
+        onToggle={() => setIsMobileFabOpen((current) => !current)}
+        onSelect={openMobileSheet}
+      />
+
+      <BottomSheet
+        open={Boolean(activeMobileSheet)}
+        title={mobileSheetTitle}
+        onClose={closeMobileSheet}
+      >
+        {activeMobileSheet === 'routes' && (
+          <div className="space-y-3">
+            {routeCards.map((routeCard) => {
+              const Icon = routeCard.icon;
+
+              return (
+                <article
+                  key={routeCard.id}
+                  className="rounded-lg border border-slate-200 bg-white p-3"
+                >
+                  <div className="flex items-start gap-3">
+                    <span className="grid size-11 shrink-0 place-items-center rounded-lg bg-[#1a1a2e] text-white">
+                      <Icon size={19} />
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <h3 className="truncate text-sm font-black text-slate-950">
+                        {routeCard.name}
+                      </h3>
+                      <p className="mt-1 line-clamp-2 text-xs font-semibold leading-5 text-slate-500">
+                        {routeCard.detail}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="mt-3 grid grid-cols-2 gap-2 text-xs font-black text-slate-700">
+                    <span className="rounded-lg bg-slate-50 px-3 py-2">{routeCard.time}</span>
+                    <span className="rounded-lg bg-slate-50 px-3 py-2">{routeCard.price}</span>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        )}
+
+        {activeMobileSheet === 'favorites' && (
+          <div className="space-y-3">
+            {favoriteStops.length === 0 ? (
+              <div className="rounded-lg border border-dashed border-slate-300 bg-slate-50 p-4 text-sm font-semibold leading-6 text-slate-500">
+                Guarda lugares desde el mapa para verlos aqui.
+              </div>
+            ) : (
+              favoriteStops.map((favorite, index) => {
+                const option = getStopLogoOption(favorite.logoId);
+                const Icon = option.icon;
+
+                return (
+                  <button
+                    key={favorite.id}
+                    type="button"
+                    onClick={() => void routeFromCurrentLocationToStop(favorite)}
+                    className="flex w-full items-center gap-3 rounded-lg border border-slate-200 bg-white p-3 text-left"
+                  >
+                    <span
+                      className="grid size-11 shrink-0 place-items-center rounded-lg text-[#1a1a2e]"
+                      style={{ backgroundColor: option.color }}
+                    >
+                      <Icon size={19} />
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-sm font-black text-slate-950">
+                        {favorite.titulo}
+                      </span>
+                      <span className="mt-1 block text-xs font-semibold text-slate-500">
+                        {(index + 1) * 0.7 < 1
+                          ? `${Math.round((index + 1) * 700)} m`
+                          : `${formatDistance((index + 1) * 0.7)} km`}
+                      </span>
+                    </span>
+                  </button>
+                );
+              })
+            )}
+          </div>
+        )}
+
+        {activeMobileSheet === 'history' && (
+          <div className="space-y-3">
+            {historyItems.map((item) => (
+              <article key={item.id} className="rounded-lg border border-slate-200 bg-white p-3">
+                <div className="flex items-start gap-3">
+                  <span className="grid size-11 shrink-0 place-items-center rounded-lg bg-slate-100 text-[#1a1a2e]">
+                    <History size={19} />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-black uppercase tracking-[0.16em] text-slate-500">
+                      {item.transport}
+                    </p>
+                    <h3 className="mt-1 line-clamp-2 text-sm font-black text-slate-950">
+                      {item.route}
+                    </h3>
+                    <p className="mt-2 text-xs font-semibold text-slate-500">{item.time}</p>
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
+
+        {activeMobileSheet === 'destination' && (
+          <article className="rounded-lg border border-slate-200 bg-white p-3">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <h3 className="truncate text-lg font-black text-slate-950">{destinationName}</h3>
+                <p className="mt-1 text-xs font-black uppercase tracking-[0.16em] text-slate-500">
+                  {destinationCategory}
+                </p>
+              </div>
+              <span
+                className={`shrink-0 rounded-full px-3 py-1 text-xs font-black ${
+                  destinationIsOpen
+                    ? 'bg-emerald-50 text-emerald-700'
+                    : 'bg-slate-100 text-slate-600'
+                }`}
+              >
+                {destinationIsOpen ? 'Abierto' : 'Cerrado'}
+              </span>
+            </div>
+
+            <div
+              className="mt-3 flex items-center gap-1 text-amber-500"
+              aria-label="4 de 5 estrellas"
+            >
+              {[0, 1, 2, 3].map((star) => (
+                <Star key={star} size={17} fill="currentColor" />
+              ))}
+              <Star size={17} className="text-slate-300" />
+            </div>
+
+            <div className="mt-4 flex flex-wrap gap-2 text-xs font-black text-slate-700">
+              <span className="inline-flex items-center gap-1 rounded-full bg-slate-50 px-3 py-2">
+                <Route size={14} />
+                {selectedRoute ? `${formatDistance(selectedRoute.distance)} km` : 'Cerca'}
+              </span>
+              <span className="inline-flex items-center gap-1 rounded-full bg-slate-50 px-3 py-2">
+                <Clock3 size={14} />
+                8:00 - 22:00
+              </span>
+              <span className="inline-flex items-center gap-1 rounded-full bg-slate-50 px-3 py-2">
+                <WalletCards size={14} />
+                $$
+              </span>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                const favorite = favoriteStops[0];
+                if (favorite) void routeFromCurrentLocationToStop(favorite);
+              }}
+              className="mt-4 flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-[#1a1a2e] text-sm font-black text-white"
+            >
+              <Navigation size={17} />
+              Iniciar navegacion
+            </button>
+          </article>
+        )}
+      </BottomSheet>
     </section>
   );
 }

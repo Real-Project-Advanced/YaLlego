@@ -49,7 +49,7 @@ export function UserDashboard({ user }: UserDashboardProps) {
           </Link>
 
           <nav
-            className="flex flex-wrap items-center justify-end gap-2"
+            className="hidden flex-wrap items-center justify-end gap-2 md:flex"
             aria-label="Controles de vista de rutas"
           >
             {routePanelButtons.map((item) => {

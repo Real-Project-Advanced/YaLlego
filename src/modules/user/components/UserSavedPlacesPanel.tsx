@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { Heart, MapPin, Navigation } from 'lucide-react';
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
-import type { Parada } from './UserRouteMapClient';
+import type { Parada } from './UserRouteMapShared';
 
 const favoriteStorageKey = 'yallego.favoritePlaces';
 
@@ -30,6 +30,7 @@ const normalizeStoredStop = (item: StoredStop): Parada | null => {
     id: item.id,
     latitud,
     longitud,
+    logoId: item.logoId ?? 'home',
     logoUrl: item.logoUrl ?? '',
     titulo,
     descripcion: descripcion ?? 'Parada guardada.',

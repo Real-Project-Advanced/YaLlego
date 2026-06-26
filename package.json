@@ -2,12 +2,20 @@
   "name": "llegoya",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": ">=22.22.1",
+    "npm": ">=10"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
     "format": "prettier --write .",
+    "mobile:build": "CAPACITOR_EXPORT=1 npm run build && npx cap sync",
+    "mobile:sync": "npx cap sync",
+    "mobile:android": "npx cap open android",
+    "mobile:ios": "npx cap open ios",
     "prepare": "husky",
     "db:generate": "npm exec prisma generate",
     "db:push": "npm exec prisma db push"
@@ -22,6 +30,11 @@
     ]
   },
   "dependencies": {
+    "@capacitor/android": "^6.2.1",
+    "@capacitor/cli": "^6.2.1",
+    "@capacitor/core": "^6.2.1",
+    "@capacitor/geolocation": "^6.0.1",
+    "@capacitor/ios": "^6.2.1",
     "@prisma/adapter-pg": "^7.8.0",
     "@prisma/client": "^7.8.0",
     "@radix-ui/react-dialog": "^1.1.15",
