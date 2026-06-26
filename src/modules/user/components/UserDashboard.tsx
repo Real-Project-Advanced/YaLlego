@@ -41,13 +41,10 @@ export function UserDashboard({ user }: UserDashboardProps) {
         <div className="mx-auto flex h-[88px] w-full max-w-[1500px] items-center justify-between gap-4 px-4 sm:px-6">
           <Link href="/user" className="flex items-center gap-3">
             <span className="grid size-12 place-items-center rounded-lg bg-slate-950 text-lg font-black text-white shadow-xl shadow-slate-950/10">
-              N
+              LY
             </span>
             <div>
-              <p className="text-lg font-black leading-5 text-slate-950">Nexthus</p>
-              <p className="text-xs font-black uppercase tracking-[0.28em] text-cyan-700">
-                Movilidad viva
-              </p>
+              <p className="text-lg font-black leading-5 text-slate-950">LlegoYa</p>
             </div>
           </Link>
 

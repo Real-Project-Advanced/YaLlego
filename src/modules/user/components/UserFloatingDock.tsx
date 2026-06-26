@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import { Bell, Bot, Heart, History, MapPinned, PanelRightClose, UserRound } from 'lucide-react';
 import type { UserPayload } from '@/lib/auth';
 import { UserChatbotPanel } from './UserChatbotPanel';
-import type { MapPoi } from './UserRouteMapClient';
+import type { Parada } from './UserRouteMapClient';
 
 type UserFloatingDockProps = {
   user: UserPayload;
@@ -31,6 +31,36 @@ const initialPanelPositions: Record<DockPanel, { x: number; y: number }> = {
 
 const favoriteStorageKey = 'yallego.favoritePlaces';
 
+type StoredStop = Partial<Parada> & {
+  name?: string;
+  lat?: number;
+  lng?: number;
+  detail?: string;
+  category?: string;
+};
+
+const normalizeStoredStop = (item: StoredStop): Parada | null => {
+  const latitud = item.latitud ?? item.lat;
+  const longitud = item.longitud ?? item.lng;
+  const titulo = item.titulo ?? item.name;
+  const descripcion = item.descripcion ?? item.detail;
+
+  if (!item.id || typeof latitud !== 'number' || typeof longitud !== 'number' || !titulo) {
+    return null;
+  }
+
+  return {
+    id: item.id,
+    latitud,
+    longitud,
+    logoUrl: item.logoUrl ?? '',
+    titulo,
+    descripcion: descripcion ?? 'Parada guardada.',
+    esFavorito: item.esFavorito ?? true,
+    informacionAdicional: item.informacionAdicional ?? item.category,
+  };
+};
+
 const readStoredFavorites = () => {
   if (typeof window === 'undefined') return [];
 
@@ -38,7 +68,8 @@ const readStoredFavorites = () => {
   if (!stored) return [];
 
   try {
-    return JSON.parse(stored) as MapPoi[];
+    const parsed = JSON.parse(stored) as StoredStop[];
+    return parsed.map(normalizeStoredStop).filter((item): item is Parada => Boolean(item));
   } catch {
     return [];
   }
@@ -54,13 +85,14 @@ export function UserFloatingDock({ user }: UserFloatingDockProps) {
   });
   const [panelPositions, setPanelPositions] = useState(initialPanelPositions);
   const [activeDrag, setActiveDrag] = useState<DockPanel | null>(null);
-  const [favoritePois, setFavoritePois] = useState<MapPoi[]>(readStoredFavorites);
+  const [favoritePois, setFavoritePois] = useState<Parada[]>([]);
 
   useEffect(() => {
     const loadFavorites = () => {
       setFavoritePois(readStoredFavorites());
     };
 
+    loadFavorites();
     window.addEventListener('storage', loadFavorites);
     window.addEventListener('yallego:favorites-updated', loadFavorites);
 
@@ -305,7 +337,7 @@ function DockPanelShell({
   );
 }
 
-function FavoritePlacesPanel({ places }: { places: MapPoi[] }) {
+function FavoritePlacesPanel({ places }: { places: Parada[] }) {
   return (
     <section className="max-h-[min(420px,calc(100vh-190px))] overflow-y-auto p-4">
       <div className="space-y-3">
@@ -319,12 +351,12 @@ function FavoritePlacesPanel({ places }: { places: MapPoi[] }) {
                 <Heart size={17} fill="currentColor" />
               </span>
               <div className="min-w-0">
-                <h3 className="truncate text-sm font-black text-slate-950">{place.name}</h3>
+                <h3 className="truncate text-sm font-black text-slate-950">{place.titulo}</h3>
                 <p className="mt-1 text-xs font-black uppercase tracking-[0.16em] text-slate-500">
-                  {place.category}
+                  Parada
                 </p>
                 <p className="mt-2 line-clamp-2 text-xs font-semibold leading-5 text-slate-500">
-                  {place.detail}
+                  {place.descripcion}
                 </p>
               </div>
             </div>

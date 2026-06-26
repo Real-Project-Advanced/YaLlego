@@ -1,58 +1,41 @@
 'use client';
 
-import { Heart, Info, MapPin } from 'lucide-react';
+import {
+  BriefcaseBusiness,
+  Building2,
+  GraduationCap,
+  Heart,
+  Home,
+  Info,
+  Landmark,
+  MapPin,
+  Navigation,
+  Route,
+  Utensils,
+} from 'lucide-react';
 import L from 'leaflet';
+import { useState, type PointerEvent } from 'react';
 import { MapContainer, Marker, Polyline, Popup, TileLayer } from 'react-leaflet';
 
 import 'leaflet/dist/leaflet.css';
 import '@/lib/maps/leaflet-config';
 import { medellinBounds } from '@/lib/maps/medellin-bounds';
-
-export type SearchRouteResult = {
-  id: string;
-  name: string;
-  startPoint: {
-    name: string;
-    lat: number;
-    lng: number;
-  };
-  endPoint: {
-    name: string;
-    lat: number;
-    lng: number;
-  };
-  distance: number;
-  duration: number;
-  coordinates: [number, number][];
-};
-
-export type MapPoi = {
-  id: string;
-  name: string;
-  category: string;
-  lat: number;
-  lng: number;
-  detail: string;
-  source?: 'osm' | 'custom';
-};
+import {
+  getStopLogoOption,
+  stopLogoOptions,
+  type Parada,
+  type SearchRouteResult,
+  type StopLogoId,
+} from './UserRouteMapShared';
 
 type UserRouteMapClientProps = {
   routes: SearchRouteResult[];
   selectedRouteId: string;
   onSelectRoute: (routeId: string) => void;
-  pois: MapPoi[];
-  favoritePoiIds: string[];
-  onToggleFavoritePoi: (poi: MapPoi) => void;
-};
-
-const categoryColors: Record<string, string> = {
-  Restaurante: '#fb7185',
-  Cafe: '#f59e0b',
-  Compras: '#22c55e',
-  Turismo: '#8b5cf6',
-  Servicio: '#38bdf8',
-  Personal: '#0f172a',
-  Lugar: '#64748b',
+  paradas: Parada[];
+  onToggleFavoriteParada: (parada: Parada) => void;
+  onRouteFromCurrentLocation: (parada: Parada) => void;
+  routingStopId?: string;
 };
 
 const createPointIcon = (color: string, label: string) =>
@@ -63,42 +46,42 @@ const createPointIcon = (color: string, label: string) =>
         display:inline-flex;
         align-items:center;
         justify-content:center;
-        width:22px;
-        height:22px;
+        width:48px;
+        height:48px;
         border-radius:9999px;
-        border: 2px solid rgba(255,255,255,0.95);
+        border: 3px solid rgba(255,255,255,0.98);
         background: ${color};
-        box-shadow: 0 0 18px 4px rgba(56,189,248,0.28);
-      "></span>
+        box-shadow: 0 0 24px 6px rgba(56,189,248,0.35);
+        font-weight: bold;
+        font-size: 20px;
+        color: white;
+        text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+      ">${label.charAt(0)}</span>
     `,
-    iconSize: [22, 22],
-    iconAnchor: [11, 11],
-    popupAnchor: [0, -12],
+    iconSize: [48, 48],
+    iconAnchor: [24, 24],
+    popupAnchor: [0, -24],
   });
 
-const createPoiIcon = (poi: MapPoi, isFavorite: boolean) => {
-  const color = categoryColors[poi.category] ?? categoryColors.Lugar;
-  const markerLabel =
-    poi.source === 'custom'
-      ? '+'
-      : poi.category === 'Turismo'
-        ? 'T'
-        : poi.name
-            .split(/\s+/)
-            .filter(Boolean)
-            .slice(0, 2)
-            .map((word) => word[0])
-            .join('')
-            .toUpperCase();
+const createStopIcon = (parada: Parada, isActive: boolean) => {
+  const fallbackLabel = parada.titulo
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((word) => word[0])
+    .join('')
+    .toUpperCase();
+
+  const logoOption = getStopLogoOption(parada.logoId);
 
   return L.divIcon({
-    className: 'poi-leaflet-icon',
+    className: 'stop-leaflet-icon',
     html: `
-      <span title="${poi.name}" class="poi-marker-shell">
-        <span class="poi-marker" style="--poi-color: ${color};">
-          ${markerLabel || 'P'}
+      <span title="${parada.titulo}" class="stop-marker-shell">
+        <span class="stop-marker ${isActive ? 'stop-marker-active' : ''}" style="--stop-logo-bg: ${logoOption.color};">
+          <span class="stop-marker-symbol">${fallbackLabel || logoOption.label[0]}</span>
         </span>
-        ${isFavorite ? '<span class="poi-marker-favorite">♥</span>' : ''}
+        ${parada.esFavorito ? '<span class="stop-marker-favorite">♥</span>' : ''}
       </span>
     `,
     iconSize: [48, 56],
@@ -111,11 +94,49 @@ export default function UserRouteMapClient({
   routes,
   selectedRouteId,
   onSelectRoute,
-  pois,
-  favoritePoiIds,
-  onToggleFavoritePoi,
+  paradas,
+  onToggleFavoriteParada,
+  onRouteFromCurrentLocation,
+  routingStopId,
 }: UserRouteMapClientProps) {
   const selectedRoute = routes.find((route) => route.id === selectedRouteId) ?? routes[0];
+  const [activeStop, setActiveStop] = useState<Parada | null>(null);
+  const [popupOffset, setPopupOffset] = useState({ x: 0, y: 0 });
+  const [isDraggingPopup, setIsDraggingPopup] = useState(false);
+
+  const openStopPopup = (parada: Parada, event: L.LeafletMouseEvent) => {
+    if (activeStop?.id !== parada.id) {
+      setPopupOffset({ x: 0, y: 0 });
+    }
+
+    setActiveStop(parada);
+    event.target.openPopup();
+  };
+
+  const handlePopupDragStart = (event: PointerEvent<HTMLElement>) => {
+    event.stopPropagation();
+    setIsDraggingPopup(true);
+    event.currentTarget.setPointerCapture(event.pointerId);
+  };
+
+  const handlePopupDragMove = (event: PointerEvent<HTMLElement>) => {
+    if (!isDraggingPopup) return;
+
+    event.stopPropagation();
+    setPopupOffset((current) => ({
+      x: current.x + event.movementX,
+      y: current.y + event.movementY,
+    }));
+  };
+
+  const handlePopupDragEnd = (event: PointerEvent<HTMLElement>) => {
+    event.stopPropagation();
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+
+    setIsDraggingPopup(false);
+  };
 
   return (
     <div className="relative z-0 h-full min-h-[360px] overflow-hidden bg-slate-100">
@@ -183,47 +204,92 @@ export default function UserRouteMapClient({
           </>
         )}
 
-        {pois.map((poi) => {
-          const isFavorite = favoritePoiIds.includes(poi.id);
+        {paradas.map((parada) => {
+          const isActive = activeStop?.id === parada.id;
+          const LogoIcon = getStopLogoOption(parada.logoId).icon;
+          const logoColor = getStopLogoOption(parada.logoId).color;
 
           return (
             <Marker
-              key={poi.id}
-              position={[poi.lat, poi.lng]}
-              icon={createPoiIcon(poi, isFavorite)}
+              key={parada.id}
+              position={[parada.latitud, parada.longitud]}
+              icon={createStopIcon(parada, isActive)}
               eventHandlers={{
-                mouseover: (event) => event.target.openPopup(),
-                click: (event) => event.target.openPopup(),
+                mouseover: (event) => openStopPopup(parada, event),
+                click: (event) => openStopPopup(parada, event),
               }}
             >
-              <Popup className="poi-popup" closeButton={false} minWidth={300}>
-                <article className="w-[300px] overflow-hidden rounded-lg border border-slate-200 bg-white text-slate-950 shadow-2xl shadow-slate-950/20">
-                  <div className="border-b border-slate-200 bg-slate-950 p-4 text-white">
-                    <p className="text-[11px] font-black uppercase tracking-[0.22em] text-cyan-200">
-                      {poi.source === 'custom' ? 'Punto turistico creado' : poi.category}
-                    </p>
-                    <h3 className="mt-2 text-lg font-black leading-tight">{poi.name}</h3>
+              <Popup
+                className="stop-popup"
+                closeButton={false}
+                minWidth={300}
+                eventHandlers={{
+                  add: () => setActiveStop(parada),
+                  remove: () => {
+                    setActiveStop((current) => (current?.id === parada.id ? null : current));
+                  },
+                }}
+              >
+                <article
+                  className="w-[300px] overflow-hidden rounded-lg border border-slate-200 bg-white text-slate-950 shadow-2xl shadow-slate-950/20"
+                  style={{
+                    transform: `translate(${popupOffset.x}px, ${popupOffset.y}px)`,
+                  }}
+                >
+                  <div
+                    className="cursor-grab touch-none border-b border-slate-200 bg-slate-950 p-4 text-white active:cursor-grabbing"
+                    onPointerDown={handlePopupDragStart}
+                    onPointerMove={handlePopupDragMove}
+                    onPointerUp={handlePopupDragEnd}
+                    onPointerCancel={handlePopupDragEnd}
+                  >
+                    <div className="flex items-start gap-3">
+                      <span className="grid size-12 shrink-0 place-items-center overflow-hidden rounded-full border-2 border-white bg-white text-sm font-black text-slate-950 shadow-lg">
+                        <span
+                          className="grid h-full w-full place-items-center"
+                          style={{ backgroundColor: logoColor }}
+                        >
+                          <LogoIcon size={22} />
+                        </span>
+                      </span>
+                      <div className="min-w-0">
+                        <p className="text-[11px] font-black uppercase tracking-[0.22em] text-cyan-200">
+                          Parada
+                        </p>
+                        <h3 className="mt-2 text-lg font-black leading-tight">{parada.titulo}</h3>
+                      </div>
+                    </div>
                   </div>
                   <div className="space-y-3 p-4">
                     <p className="flex items-start gap-2 text-sm font-semibold leading-6 text-slate-600">
                       <Info size={16} className="mt-1 shrink-0 text-cyan-700" />
-                      {poi.detail}
+                      {parada.descripcion}
                     </p>
-                    <p className="flex items-center gap-2 text-xs font-bold text-slate-500">
-                      <MapPin size={15} />
-                      {poi.lat.toFixed(5)}, {poi.lng.toFixed(5)}
-                    </p>
+                    {parada.informacionAdicional && (
+                      <p className="rounded-lg bg-slate-50 p-3 text-xs font-bold leading-5 text-slate-600">
+                        {parada.informacionAdicional}
+                      </p>
+                    )}
                     <button
                       type="button"
-                      onClick={() => onToggleFavoritePoi(poi)}
+                      onClick={() => onToggleFavoriteParada(parada)}
                       className={`flex h-11 w-full items-center justify-center gap-2 rounded-lg text-sm font-black transition ${
-                        isFavorite
+                        parada.esFavorito
                           ? 'bg-rose-600 text-white hover:bg-rose-700'
                           : 'bg-slate-950 text-white hover:bg-cyan-700'
                       }`}
                     >
-                      <Heart size={17} fill={isFavorite ? 'currentColor' : 'none'} />
-                      {isFavorite ? 'Quitar de favoritos' : 'Guardar favorito'}
+                      <Heart size={17} fill={parada.esFavorito ? 'currentColor' : 'none'} />
+                      {parada.esFavorito ? 'Quitar favorito' : 'Guardar a Favoritos'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => onRouteFromCurrentLocation(parada)}
+                      disabled={routingStopId === parada.id}
+                      className="flex h-11 w-full items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white text-sm font-black text-slate-800 transition hover:border-cyan-400 hover:bg-cyan-50 disabled:cursor-wait disabled:text-slate-400"
+                    >
+                      {routingStopId === parada.id ? <Route size={17} /> : <Navigation size={17} />}
+                      {routingStopId === parada.id ? 'Calculando ruta' : 'Como llegar'}
                     </button>
                   </div>
                 </article>
@@ -241,25 +307,26 @@ export default function UserRouteMapClient({
         }
 
         .custom-leaflet-icon,
-        .poi-leaflet-icon {
+        .stop-leaflet-icon {
           background: transparent !important;
           border: none !important;
         }
 
-        .poi-marker-shell {
+        .stop-marker-shell {
           position: relative;
           display: inline-grid;
           place-items: center;
         }
 
-        .poi-marker {
+        .stop-marker {
           display: grid;
           width: 42px;
           height: 42px;
           place-items: center;
           border-radius: 9999px;
           border: 3px solid #ffffff;
-          background: var(--poi-color);
+          overflow: hidden;
+          background: var(--stop-logo-bg, #ffffff);
           color: #0f172a;
           font-size: 12px;
           font-weight: 950;
@@ -268,7 +335,24 @@ export default function UserRouteMapClient({
             0 0 0 7px rgba(255, 255, 255, 0.52);
         }
 
-        .poi-marker-favorite {
+        .stop-marker-logo {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+        }
+
+        .stop-marker-symbol {
+          display: none;
+        }
+
+        .stop-marker-active {
+          box-shadow:
+            0 18px 38px rgba(15, 23, 42, 0.24),
+            0 0 0 8px rgba(34, 211, 238, 0.24),
+            0 0 0 12px rgba(255, 255, 255, 0.62);
+        }
+
+        .stop-marker-favorite {
           position: absolute;
           right: -5px;
           top: -7px;
@@ -284,8 +368,8 @@ export default function UserRouteMapClient({
           box-shadow: 0 8px 18px rgba(225, 29, 72, 0.32);
         }
 
-        .poi-popup .leaflet-popup-content-wrapper,
-        .poi-popup .leaflet-popup-content {
+        .stop-popup .leaflet-popup-content-wrapper,
+        .stop-popup .leaflet-popup-content {
           margin: 0;
           padding: 0;
           border-radius: 8px;
@@ -293,7 +377,7 @@ export default function UserRouteMapClient({
           box-shadow: none;
         }
 
-        .poi-popup .leaflet-popup-tip-container {
+        .stop-popup .leaflet-popup-tip-container {
           display: none;
         }
 

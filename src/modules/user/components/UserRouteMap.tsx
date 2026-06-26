@@ -1,7 +1,7 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import type { MapPoi, SearchRouteResult } from './UserRouteMapClient';
+import type { Parada, SearchRouteResult } from './UserRouteMapShared';
 
 const UserRouteMapClient = dynamic(() => import('./UserRouteMapClient'), {
   ssr: false,
@@ -16,9 +16,10 @@ type UserRouteMapProps = {
   routes: SearchRouteResult[];
   selectedRouteId: string;
   onSelectRoute: (routeId: string) => void;
-  pois: MapPoi[];
-  favoritePoiIds: string[];
-  onToggleFavoritePoi: (poi: MapPoi) => void;
+  paradas: Parada[];
+  onToggleFavoriteParada: (parada: Parada) => void;
+  onRouteFromCurrentLocation: (parada: Parada) => void;
+  routingStopId?: string;
 };
 
 export function UserRouteMap(props: UserRouteMapProps) {
