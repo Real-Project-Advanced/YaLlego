@@ -9,11 +9,11 @@ type UserRouteSearchProps = {
   routes: UserRoute[];
 };
 
-const routeModes = ['Todas', 'Sin transbordo', 'Menor tiempo', 'Metro'] as const;
+const routeModes = ['All', 'No transfer', 'Fastest', 'Metro'] as const;
 
 export function UserRouteSearch({ routes }: UserRouteSearchProps) {
   const [query, setQuery] = useState('');
-  const [mode, setMode] = useState<(typeof routeModes)[number]>('Todas');
+  const [mode, setMode] = useState<(typeof routeModes)[number]>('All');
   const [selectedRouteId, setSelectedRouteId] = useState(routes[0]?.id ?? '');
 
   const filteredRoutes = useMemo(() => {
@@ -28,9 +28,9 @@ export function UserRouteSearch({ routes }: UserRouteSearchProps) {
         route.tags.some((tag) => tag.toLowerCase().includes(normalizedQuery));
 
       const matchesMode =
-        mode === 'Todas' ||
-        (mode === 'Sin transbordo' && route.transfers === 0) ||
-        (mode === 'Menor tiempo' && route.duration <= 28) ||
+        mode === 'All' ||
+        (mode === 'No transfer' && route.transfers === 0) ||
+        (mode === 'Fastest' && route.duration <= 28) ||
         (mode === 'Metro' && route.tags.includes('Metro'));
 
       return matchesQuery && matchesMode;
@@ -42,14 +42,14 @@ export function UserRouteSearch({ routes }: UserRouteSearchProps) {
     visibleRoutes.find((route) => route.id === selectedRouteId) ?? visibleRoutes[0];
 
   return (
-    <section id="rutas" className="grid gap-5 xl:grid-cols-[0.88fr_1.12fr]">
+    <section id="routes" className="grid gap-5 xl:grid-cols-[minmax(0,0.88fr)_minmax(0,1.12fr)]">
       <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
         <div className="flex flex-col gap-3 border-b border-slate-100 pb-4">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <p className="text-xs font-bold uppercase text-emerald-700">Busqueda de rutas</p>
-              <h2 className="mt-1 text-2xl font-black text-slate-950">
-                Encuentra tu mejor trayecto
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-xs font-bold uppercase text-emerald-700">Route search</p>
+              <h2 className="mt-1 text-[clamp(1.5rem,5vw,1.75rem)] font-black leading-tight text-slate-950">
+                Find your best trip
               </h2>
             </div>
             <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-emerald-50 text-emerald-700">
@@ -62,7 +62,7 @@ export function UserRouteSearch({ routes }: UserRouteSearchProps) {
             <input
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="Origen, destino o tipo de ruta"
+              placeholder="Origin, destination, or route type"
               className="w-full bg-transparent text-sm font-semibold text-slate-800 outline-none placeholder:text-slate-400"
             />
           </label>
@@ -102,11 +102,13 @@ export function UserRouteSearch({ routes }: UserRouteSearchProps) {
                 }`}
               >
                 <div className="flex items-start justify-between gap-3">
-                  <div>
+                  <div className="min-w-0">
                     <h3 className="text-base font-black text-slate-950">{route.name}</h3>
-                    <p className="mt-1 flex items-center gap-1 text-sm font-semibold text-slate-500">
-                      <MapPin size={15} />
-                      {route.startPoint.name} a {route.endPoint.name}
+                    <p className="mt-1 flex min-w-0 items-center gap-1 text-sm font-semibold text-slate-500">
+                      <MapPin size={15} className="shrink-0" />
+                      <span className="truncate">
+                        {route.startPoint.name} a {route.endPoint.name}
+                      </span>
                     </p>
                   </div>
                   <span
@@ -115,7 +117,7 @@ export function UserRouteSearch({ routes }: UserRouteSearchProps) {
                   />
                 </div>
 
-                <div className="mt-4 grid grid-cols-3 gap-2 text-center">
+                <div className="mt-4 grid grid-cols-1 gap-2 text-center min-[380px]:grid-cols-3">
                   <span className="rounded-lg bg-white px-2 py-2 text-xs font-black text-slate-700 ring-1 ring-slate-200">
                     {route.duration} min
                   </span>
@@ -123,7 +125,7 @@ export function UserRouteSearch({ routes }: UserRouteSearchProps) {
                     {route.price}
                   </span>
                   <span className="rounded-lg bg-white px-2 py-2 text-xs font-black text-slate-700 ring-1 ring-slate-200">
-                    {route.transfers} trans.
+                    {route.transfers} transfers
                   </span>
                 </div>
 
@@ -145,11 +147,13 @@ export function UserRouteSearch({ routes }: UserRouteSearchProps) {
 
       <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
         <div className="flex flex-col gap-3 border-b border-slate-100 p-4 lg:flex-row lg:items-center lg:justify-between">
-          <div>
-            <p className="text-xs font-bold uppercase text-slate-500">Mapa de Medellin</p>
-            <h2 className="mt-1 text-xl font-black text-slate-950">{selectedRoute.name}</h2>
+          <div className="min-w-0">
+            <p className="text-xs font-bold uppercase text-slate-500">Medellin map</p>
+            <h2 className="mt-1 truncate text-xl font-black text-slate-950">
+              {selectedRoute.name}
+            </h2>
           </div>
-          <div className="grid grid-cols-3 gap-2 text-center">
+          <div className="grid grid-cols-1 gap-2 text-center min-[380px]:grid-cols-3">
             <span className="rounded-lg bg-slate-50 px-3 py-2 text-xs font-black text-slate-700">
               <Clock size={14} className="mx-auto mb-1" />
               {selectedRoute.duration} min
@@ -165,7 +169,7 @@ export function UserRouteSearch({ routes }: UserRouteSearchProps) {
           </div>
         </div>
 
-        <div className="h-[420px]">
+        <div className="h-[320px] sm:h-[380px] lg:h-[420px]">
           <UserRouteMap
             routes={visibleRoutes}
             selectedRouteId={selectedRoute.id}

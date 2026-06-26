@@ -51,7 +51,7 @@ export async function generateTokens(payload: UserPayload): Promise<TokenPair> {
     generateAccessToken(payload),
     generateRefreshToken(payload),
   ]);
-  
+
   return {
     accessToken,
     refreshToken,
@@ -87,13 +87,13 @@ export async function verifyToken(token: string): Promise<UserPayload | null> {
 }
 
 /**
- * Guardar tokens en cookies
+ * Save tokens in cookies
  * - Access Token: httpOnly, Secure, 15 minutos
  * - Refresh Token: httpOnly, Secure, 7 días
  */
 export async function setAuthCookies(tokens: TokenPair): Promise<void> {
   const cookieStore = await cookies();
-  
+
   // Access Token - corta duración
   cookieStore.set('accessToken', tokens.accessToken, {
     httpOnly: true,
@@ -114,7 +114,7 @@ export async function setAuthCookies(tokens: TokenPair): Promise<void> {
 }
 
 /**
- * Guardar un token único (compatibilidad con código anterior)
+ * Save a single token (compatibility with previous code)
  */
 export async function setAuthCookie(token: string): Promise<void> {
   const cookieStore = await cookies();
@@ -171,7 +171,6 @@ export async function refreshUserTokens(): Promise<TokenPair | null> {
 
   const newTokens = await generateTokens(payload);
   await setAuthCookies(newTokens);
-  
+
   return newTokens;
 }
-

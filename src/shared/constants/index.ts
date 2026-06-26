@@ -1,32 +1,32 @@
-// Constantes de configuración
-export const APP_NAME = 'NEXTHUS';
+// Configuration constants
+export const APP_NAME = 'LlegoYa';
 export const APP_VERSION = '0.1.0';
 
-// Configuración de JWT
+// JWT configuration
 export const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 export const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
 
-// Configuración de Bcrypt
+// Bcrypt configuration
 export const BCRYPT_ROUNDS = 12;
 
-// Mensajes de error comunes
+// Common error messages
 export const ERROR_MESSAGES = {
-  USER_NOT_FOUND: 'Usuario no encontrado',
-  INVALID_PASSWORD: 'Contraseña incorrecta',
-  USER_INACTIVE: 'Usuario inactivo',
-  EMAIL_ALREADY_EXISTS: 'El email ya está registrado',
-  UNAUTHORIZED: 'No autorizado',
-  FORBIDDEN: 'Acceso denegado',
-  INTERNAL_SERVER_ERROR: 'Error interno del servidor',
-  VALIDATION_ERROR: 'Error de validación',
+  USER_NOT_FOUND: 'User not found',
+  INVALID_PASSWORD: 'Incorrect password',
+  USER_INACTIVE: 'User is inactive',
+  EMAIL_ALREADY_EXISTS: 'Email is already registered',
+  UNAUTHORIZED: 'Unauthorized',
+  FORBIDDEN: 'Access denied',
+  INTERNAL_SERVER_ERROR: 'Internal server error',
+  VALIDATION_ERROR: 'Validation error',
 } as const;
 
-// Mensajes de éxito comunes
+// Common success messages
 export const SUCCESS_MESSAGES = {
-  LOGIN_SUCCESS: 'Sesión iniciada correctamente',
-  REGISTER_SUCCESS: 'Registro exitoso',
-  LOGOUT_SUCCESS: 'Sesión cerrada correctamente',
-  CREATION_SUCCESS: 'Creación exitosa',
-  UPDATE_SUCCESS: 'Actualización exitosa',
-  DELETE_SUCCESS: 'Eliminación exitosa',
+  LOGIN_SUCCESS: 'Signed in successfully',
+  REGISTER_SUCCESS: 'Registered successfully',
+  LOGOUT_SUCCESS: 'Logged out successfully',
+  CREATION_SUCCESS: 'Created successfully',
+  UPDATE_SUCCESS: 'Updated successfully',
+  DELETE_SUCCESS: 'Deleted successfully',
 } as const;

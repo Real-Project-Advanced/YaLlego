@@ -1,11 +1,11 @@
-// Tipos de Rol de Usuario
+// User role types
 export enum UserRole {
   SUPER_ADMIN = 'SUPER_ADMIN',
   DRIVER = 'DRIVER',
   USER = 'USER',
 }
 
-// Usuario autenticado
+// Authenticated user
 export interface UserPayload {
   id: number;
   email: string;
@@ -13,7 +13,7 @@ export interface UserPayload {
   role: UserRole;
 }
 
-// Usuario de la base de datos
+// Database user
 export interface User {
   id: number;
   fullname: string;
@@ -27,7 +27,7 @@ export interface User {
   updated_at: Date;
 }
 
-// Conductor
+// Driver
 export interface Driver {
   id: number;
   user_id: number;

@@ -29,7 +29,7 @@ export async function POST(request: Request) {
           error: 'Ya existe un SUPER_ADMIN en el sistema',
           message: 'No se puede crear otro SUPER_ADMIN. Contacta al administrador.',
         },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -41,14 +41,14 @@ export async function POST(request: Request) {
     if (!fullname || !email || !password) {
       return NextResponse.json(
         { error: 'fullname, email y password son requeridos' },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     if (password.length < 8) {
       return NextResponse.json(
         { error: 'La contraseña debe tener al menos 8 caracteres' },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -58,16 +58,13 @@ export async function POST(request: Request) {
     });
 
     if (emailExists) {
-      return NextResponse.json(
-        { error: 'El email ya está registrado' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'El email ya está registrado' }, { status: 400 });
     }
 
     // Hash de la contraseña
     const hashedPassword = await hashPassword(password);
 
-    // Crear el SUPER_ADMIN
+    // Create the SUPER_ADMIN
     const admin = await prisma.users.create({
       data: {
         fullname,
@@ -93,13 +90,10 @@ export async function POST(request: Request) {
         message: 'SUPER_ADMIN creado exitosamente',
         admin,
       },
-      { status: 201 }
+      { status: 201 },
     );
   } catch (error) {
     console.error('Bootstrap error:', error);
-    return NextResponse.json(
-      { error: 'Error al crear SUPER_ADMIN' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Error al crear SUPER_ADMIN' }, { status: 500 });
   }
 }

@@ -61,7 +61,7 @@ export class AuthService {
   }
 
   /**
-   * Registro de usuario
+   * User registration
    */
   async register(input: RegisterInput): Promise<OperationResult<{ user: UserPayload }>> {
     try {
@@ -77,7 +77,7 @@ export class AuthService {
       // Hash de contraseña
       const hashedPassword = await hashPassword(input.password);
 
-      // Crear usuario
+      // Create user
       const user = await userRepository.create({
         fullname: input.name,
         email: input.email,
@@ -107,7 +107,7 @@ export class AuthService {
   }
 
   /**
-   * Crear SUPER_ADMIN (Bootstrap)
+   * Create SUPER_ADMIN (Bootstrap)
    */
   async createSuperAdmin(input: {
     fullname: string;
@@ -138,7 +138,7 @@ export class AuthService {
       // Hash de contraseña
       const hashedPassword = await hashPassword(input.password);
 
-      // Crear SUPER_ADMIN
+      // Create SUPER_ADMIN
       const user = await userRepository.create({
         fullname: input.fullname,
         email: input.email,

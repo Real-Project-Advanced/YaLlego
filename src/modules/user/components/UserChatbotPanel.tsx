@@ -8,17 +8,14 @@ type Message = {
   content: string;
 };
 
-const quickPrompts = [
-  'Ruta mas rapida al Poblado',
-  'Evitar caminatas largas',
-  'Opciones desde Laureles',
-];
+const quickPrompts = ['Fastest route to Poblado', 'Avoid long walks', 'Options from Laureles'];
 
 export function UserChatbotPanel() {
   const [messages, setMessages] = useState<Message[]>([
     {
       role: 'assistant',
-      content: 'Cuéntame desde dónde sales y hacia dónde vas. Te ayudo a comparar opciones.',
+      content:
+        'Tell me where you are starting and where you are going. I can help compare options.',
     },
   ]);
   const [input, setInput] = useState('');
@@ -50,7 +47,7 @@ export function UserChatbotPanel() {
         {
           role: 'assistant',
           content:
-            'No pude conectar con el asistente ahora. Puedes revisar rutas sugeridas mientras vuelve.',
+            'I could not connect to the assistant right now. You can review suggested routes while it comes back.',
         },
       ]);
     } finally {
@@ -60,10 +57,12 @@ export function UserChatbotPanel() {
 
   return (
     <section id="chatbot" className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-      <div className="flex items-center justify-between gap-3">
-        <div>
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
           <p className="text-xs font-bold uppercase text-emerald-700">Chatbot</p>
-          <h2 className="mt-1 text-xl font-black text-slate-950">Asistente de movilidad</h2>
+          <h2 className="mt-1 text-xl font-black leading-tight text-slate-950">
+            Mobility assistant
+          </h2>
         </div>
         <span className="grid size-10 place-items-center rounded-lg bg-slate-950 text-white">
           <Bot size={20} />
@@ -83,7 +82,7 @@ export function UserChatbotPanel() {
         ))}
       </div>
 
-      <div className="mt-4 h-72 overflow-y-auto rounded-lg bg-slate-50 p-3">
+      <div className="mt-4 h-64 overflow-y-auto rounded-lg bg-slate-50 p-3 sm:h-72">
         <div className="space-y-3">
           {messages.map((message, index) => (
             <div
@@ -96,7 +95,7 @@ export function UserChatbotPanel() {
                 </span>
               )}
               <p
-                className={`max-w-[82%] rounded-lg px-3 py-2 text-sm font-medium leading-6 ${
+                className={`max-w-[min(82%,34rem)] break-words rounded-lg px-3 py-2 text-sm font-medium leading-6 ${
                   message.role === 'user'
                     ? 'bg-slate-950 text-white'
                     : 'border border-slate-200 bg-white text-slate-700'
@@ -113,21 +112,21 @@ export function UserChatbotPanel() {
           ))}
           {isLoading && (
             <p className="w-fit rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-bold text-slate-500">
-              Consultando...
+              Checking...
             </p>
           )}
         </div>
       </div>
 
-      <div className="mt-3 flex h-12 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 focus-within:border-emerald-600">
+      <div className="mt-3 flex min-h-12 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 focus-within:border-emerald-600">
         <input
           value={input}
           onChange={(event) => setInput(event.target.value)}
           onKeyDown={(event) => {
             if (event.key === 'Enter') sendMessage();
           }}
-          placeholder="Pregunta por una ruta o destino"
-          className="w-full text-sm font-semibold outline-none placeholder:text-slate-400"
+          placeholder="Ask about a route or destination"
+          className="min-w-0 w-full text-sm font-semibold outline-none placeholder:text-slate-400"
         />
         <button
           type="button"

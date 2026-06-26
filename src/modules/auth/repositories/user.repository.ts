@@ -6,7 +6,7 @@ import { User, UserRole } from '@/shared/types';
  */
 export class UserRepository {
   /**
-   * Encuentra un usuario por email
+   * Find a user by email
    */
   async findByEmail(email: string): Promise<User | null> {
     return prisma.users.findUnique({
@@ -15,7 +15,7 @@ export class UserRepository {
   }
 
   /**
-   * Encuentra un usuario por ID
+   * Find a user by ID
    */
   async findById(id: number): Promise<User | null> {
     return prisma.users.findUnique({

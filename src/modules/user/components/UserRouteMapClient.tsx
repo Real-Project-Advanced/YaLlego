@@ -57,7 +57,7 @@ export default function UserRouteMapClient({
         <Popup>
           <strong>{selectedRoute.startPoint.name}</strong>
           <br />
-          Inicio de ruta
+          Route start
         </Popup>
       </Marker>
 

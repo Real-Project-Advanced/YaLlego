@@ -1,21 +1,20 @@
-import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
-import "./globals.css";
+import type { Metadata } from 'next';
+import { Geist, Geist_Mono } from 'next/font/google';
+import './globals.css';
 
 const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
+  variable: '--font-geist-sans',
+  subsets: ['latin'],
 });
 
 const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
+  variable: '--font-geist-mono',
+  subsets: ['latin'],
 });
 
 export const metadata: Metadata = {
-  title: "Nexthus | Rutas urbanas en Medellin",
-  description:
-    "App para encontrar las mejores rutas de buses urbanos dentro de Medellin.",
+  title: 'LlegoYa | Urban routes in Medellin',
+  description: 'App to find the best urban bus routes across Medellin.',
 };
 
 export default function RootLayout({

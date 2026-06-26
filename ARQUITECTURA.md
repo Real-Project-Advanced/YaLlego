@@ -1,4 +1,4 @@
-# Arquitectura Modular por Capas - Nexthus
+# Arquitectura Modular por Capas - LlegoYa
 
 ## 📋 Estructura General
 
@@ -47,6 +47,7 @@ src/
 ## 🎯 Capas Explicadas
 
 ### 1. **Shared Layer** (`src/shared/`)
+
 Código reutilizable entre backend y frontend.
 
 - **types/**: Interfaces TypeScript compartidas
@@ -65,63 +66,78 @@ Código reutilizable entre backend y frontend.
   - Configuraciones globales
 
 ### 2. **Backend Layer** (`src/backend/`)
+
 Lógica empresarial, acceso a datos y utilidades.
 
 #### **Repositories** (`backend/repositories/`)
+
 Patrón DAO - Acceso exclusivo a base de datos
+
 ```typescript
 // UserRepository.ts
 class UserRepository {
-  async findByEmail(email: string): Promise<User | null>
-  async findById(id: number): Promise<User | null>
-  async create(data: CreateUserData): Promise<User>
-  async update(id: number, data: UpdateUserData): Promise<User>
+  async findByEmail(email: string): Promise<User | null>;
+  async findById(id: number): Promise<User | null>;
+  async create(data: CreateUserData): Promise<User>;
+  async update(id: number, data: UpdateUserData): Promise<User>;
 }
 ```
 
 #### **Services** (`backend/services/`)
+
 Lógica empresarial e implementación
+
 ```typescript
 // AuthService.ts
 class AuthService {
-  async login(input: LoginInput): Promise<OperationResult>
-  async register(input: RegisterInput): Promise<OperationResult>
-  async createSuperAdmin(input): Promise<OperationResult>
+  async login(input: LoginInput): Promise<OperationResult>;
+  async register(input: RegisterInput): Promise<OperationResult>;
+  async createSuperAdmin(input): Promise<OperationResult>;
 }
 ```
 
 #### **Utils** (`backend/utils/`)
+
 Funciones de utilidad para operaciones comunes
+
 - `password.ts`: Hash y verificación de contraseñas
 - `jwt.ts`: Generación y verificación de tokens
 
 ### 3. **Frontend Layer** (`src/frontend/`)
+
 Interfaz de usuario y lógica del cliente.
 
 #### **Server Actions** (`frontend/actions/`)
+
 Funciones que se ejecutan en el servidor pero son invocadas desde el cliente
+
 ```typescript
 // auth.actions.ts
-export async function loginAction(formData: FormData)
+export async function loginAction(formData: FormData);
 
 // register.actions.ts
-export async function registerAction(formData: FormData)
+export async function registerAction(formData: FormData);
 
 // bootstrap.actions.ts
-export async function createSuperAdminAction(formData: FormData)
+export async function createSuperAdminAction(formData: FormData);
 ```
 
 #### **Components** (`frontend/components/`)
+
 Componentes React reutilizables
+
 - `common/`: Componentes base (Header, Form, FormField)
 - `layouts/`: Layouts (AuthLayout)
 - `features/`: Componentes de características específicas
 
 #### **Pages** (`frontend/pages/` y `app/`)
+
 Páginas Next.js que usan componentes y Server Actions
 
 ### 4. **Configuration Layer** (`src/lib/`)
+
 Configuraciones globales del proyecto
+
 - `auth.ts`: Gestión de cookies JWT
 - `prisma.ts`: Cliente de base de datos
 - `env.ts`: Variables de entorno
@@ -129,6 +145,7 @@ Configuraciones globales del proyecto
 ## 🔄 Flujo de Datos
 
 ### Login Flow
+
 ```
 LoginPage (app/auth/login/page.tsx)
     ↓

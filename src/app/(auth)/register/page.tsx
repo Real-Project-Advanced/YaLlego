@@ -1,54 +1,51 @@
-import Link from "next/link";
-import { AuthLayout } from "@/components/layouts/AuthLayout";
-import { Form, FormField, FormButton } from "@/components/common/Form";
-import { registerAction } from "@/modules/auth/actions/auth.actions";
+import Link from 'next/link';
+import { AuthLayout } from '@/components/layouts/AuthLayout';
+import { Form, FormField, FormButton } from '@/components/common/Form';
+import { registerAction } from '@/modules/auth/actions/auth.actions';
 
 export default function RegisterPage() {
   return (
     <AuthLayout
-      title="Crea tu cuenta y planea tus rutas"
-      subtitle="Regístrate"
-      description="Guarda tus destinos favoritos, recibe recomendaciones personalizadas y accede a las mejores rutas en Medellín."
-      footerText="Ya tienes cuenta?"
-      footerLink={{ text: "Inicia sesión", href: "/login" }}
+      title="Create your account and plan your routes"
+      subtitle="Register"
+      description="Save your favorite destinations, receive personalized recommendations, and access the best routes in Medellin."
+      footerText="Already have an account?"
+      footerLink={{ text: 'Sign in', href: '/login' }}
     >
       <div className="mb-8">
-        <h2 className="text-3xl font-black">Registro</h2>
+        <h2 className="text-3xl font-black">Register</h2>
         <p className="mt-2 text-sm text-slate-600">
-          Ya tienes cuenta?{" "}
-          <Link
-            href="/login"
-            className="font-bold text-blue-700 hover:text-blue-800"
-          >
-            Inicia sesion
+          Already have an account?{' '}
+          <Link href="/login" className="font-bold text-blue-700 hover:text-blue-800">
+            Sign in
           </Link>
         </p>
       </div>
 
       <Form action={registerAction}>
         <FormField
-          label="Nombre completo"
+          label="Full name"
           name="name"
           type="text"
-          placeholder="Tu nombre"
+          placeholder="Your name"
           autoComplete="name"
           required
         />
 
         <FormField
-          label="Correo"
+          label="Email"
           name="email"
           type="email"
-          placeholder="tu@email.com"
+          placeholder="you@email.com"
           autoComplete="email"
           required
         />
 
         <FormField
-          label="Contraseña"
+          label="Password"
           name="password"
           type="password"
-          placeholder="Mínimo 8 caracteres"
+          placeholder="Minimum 8 characters"
           autoComplete="new-password"
           required
         />
@@ -59,10 +56,10 @@ export default function RegisterPage() {
             className="mt-1 size-4 rounded border-slate-300 accent-blue-700"
             required
           />
-          Acepto recibir información de rutas, cambios de servicio y recomendaciones para mis trayectos urbanos.
+          I agree to receive route updates, service changes, and recommendations for my urban trips.
         </label>
 
-        <FormButton>Crear cuenta</FormButton>
+        <FormButton>Create account</FormButton>
       </Form>
     </AuthLayout>
   );
