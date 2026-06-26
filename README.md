@@ -1,4 +1,3 @@
-````md
 # LlegoYa
 
 LlegoYa is a full-stack urban mobility platform for Medellín. The project aims to help public transportation users find routes, track buses, and receive smart travel recommendations through a modern web experience with interactive maps, role-based authentication, and an AI assistant specialized in urban mobility.
