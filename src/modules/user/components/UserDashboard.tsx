@@ -1,16 +1,39 @@
+'use client';
+
 import Link from 'next/link';
-import { Heart, History, MessageCircle, UserRound } from 'lucide-react';
+import { Eye, EyeOff, Gauge, Layers3, Navigation } from 'lucide-react';
+import { useState } from 'react';
 import type { UserPayload } from '@/lib/auth';
-import { favoriteRoutes, userRoutes } from '../data/user-dashboard.data';
 import { UserFloatingDock } from './UserFloatingDock';
-import { UserRouteSearch } from './UserRouteSearch';
+import { RoutePanelKey, UserRouteSearch } from './UserRouteSearch';
 
 type UserDashboardProps = {
   user: UserPayload;
 };
 
+const routePanelButtons: Array<{
+  key: RoutePanelKey;
+  label: string;
+  ariaLabel: string;
+  icon: typeof Eye;
+}> = [
+  { key: 'search', label: '', ariaLabel: 'Buscador', icon: Eye },
+  { key: 'route', label: 'Ruta', ariaLabel: 'Ruta', icon: Navigation },
+  { key: 'metrics', label: 'Datos', ariaLabel: 'Datos', icon: Gauge },
+  { key: 'timeline', label: 'Paradas', ariaLabel: 'Paradas', icon: Layers3 },
+];
+
 export function UserDashboard({ user }: UserDashboardProps) {
-  const nextRoute = userRoutes[0];
+  const [visiblePanels, setVisiblePanels] = useState<Record<RoutePanelKey, boolean>>({
+    search: true,
+    route: false,
+    metrics: true,
+    timeline: false,
+  });
+
+  const toggleRoutePanel = (panel: RoutePanelKey) => {
+    setVisiblePanels((current) => ({ ...current, [panel]: !current[panel] }));
+  };
 
   return (
     <main className="min-h-screen bg-white text-slate-950">
@@ -28,55 +51,45 @@ export function UserDashboard({ user }: UserDashboardProps) {
             </div>
           </Link>
 
-          <div className="hidden items-center gap-2 lg:flex">
-            <div className="rounded-lg border border-slate-200 bg-white px-4 py-3 shadow-sm">
-              <p className="text-[11px] font-black uppercase tracking-[0.22em] text-slate-500">
-                Proxima ruta
-              </p>
-              <p className="mt-1 text-sm font-black text-slate-950">
-                {nextRoute.name} · {nextRoute.duration} min
-              </p>
-            </div>
-            <div className="rounded-lg border border-slate-200 bg-white px-4 py-3 shadow-sm">
-              <p className="text-[11px] font-black uppercase tracking-[0.22em] text-slate-500">
-                Favoritas
-              </p>
-              <p className="mt-1 text-sm font-black text-slate-950">
-                {favoriteRoutes.length} rutas guardadas
-              </p>
-            </div>
-          </div>
+          <nav
+            className="flex flex-wrap items-center justify-end gap-2"
+            aria-label="Controles de vista de rutas"
+          >
+            {routePanelButtons.map((item) => {
+              const Icon = item.icon;
+              const isVisible = visiblePanels[item.key];
 
-          <div className="flex items-center gap-2">
-            <Link
-              href="/user/chat"
-              className="grid size-11 place-items-center rounded-lg border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:border-cyan-300 hover:text-cyan-700"
-              aria-label="Abrir chat"
-            >
-              <MessageCircle size={19} />
-            </Link>
-            <Link
-              href="/user/favorites"
-              className="grid size-11 place-items-center rounded-lg border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:border-rose-300 hover:text-rose-700"
-              aria-label="Abrir favoritos"
-            >
-              <Heart size={19} />
-            </Link>
-            <Link
-              href="/user/history"
-              className="grid size-11 place-items-center rounded-lg border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:border-violet-300 hover:text-violet-700"
-              aria-label="Abrir historial"
-            >
-              <History size={19} />
-            </Link>
-            <span className="grid size-11 place-items-center rounded-lg bg-slate-950 text-white shadow-xl shadow-slate-950/10">
-              <UserRound size={19} />
-            </span>
-          </div>
+              return (
+                <button
+                  key={item.key}
+                  type="button"
+                  onClick={() => toggleRoutePanel(item.key)}
+                  className={`inline-flex h-11 items-center justify-center gap-2 rounded-full px-4 text-xs font-black uppercase tracking-[0.18em] shadow-xl shadow-slate-950/10 transition sm:px-5 ${
+                    isVisible
+                      ? 'bg-slate-950 text-white'
+                      : 'border border-slate-200 bg-white text-slate-500 hover:border-cyan-300 hover:text-cyan-700'
+                  }`}
+                  aria-pressed={isVisible}
+                  aria-label={`Mostrar u ocultar ${item.ariaLabel}`}
+                >
+                  <Icon size={15} />
+                  {item.label && <span className="hidden sm:inline">{item.label}</span>}
+                  {item.key !== 'search' && (isVisible ? <Eye size={14} /> : <EyeOff size={14} />)}
+                </button>
+              );
+            })}
+          </nav>
         </div>
       </header>
 
-      <UserRouteSearch routes={userRoutes} />
+      <div className="relative">
+        <div className="flex min-h-[calc(100vh-88px)] flex-col lg:flex-row">
+          <div className="w-full lg:flex-1">
+            <UserRouteSearch visiblePanels={visiblePanels} onTogglePanel={toggleRoutePanel} />
+          </div>
+        </div>
+      </div>
+
       <UserFloatingDock user={user} />
     </main>
   );
