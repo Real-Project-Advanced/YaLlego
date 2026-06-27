@@ -5,6 +5,7 @@ import { MapContainer, Marker, Polyline, Popup, TileLayer } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css';
 import '@/lib/maps/leaflet-config';
 import { medellinBounds } from '@/lib/maps/medellin-bounds';
+import { useLiveBuses } from '@/hooks/useLiveBuses';
 import type { UserRoute } from '../data/user-dashboard.data';
 
 type UserRouteMapClientProps = {
@@ -19,6 +20,7 @@ export default function UserRouteMapClient({
   onSelectRoute,
 }: UserRouteMapClientProps) {
   const selectedRoute = routes.find((route) => route.id === selectedRouteId) ?? routes[0];
+  const buses = useLiveBuses();
 
   return (
     <MapContainer
@@ -68,6 +70,22 @@ export default function UserRouteMapClient({
           Destino estimado
         </Popup>
       </Marker>
+
+      {buses.map((bus) => (
+        <Marker key={bus.id} position={[bus.location.lat, bus.location.lng]}>
+          <Popup>
+            <strong>{bus.plate}</strong>
+            <br />
+            {bus.model} &middot; {bus.capacity} asientos
+            {bus.routeId !== undefined && (
+              <>
+                <br />
+                Ruta #{bus.routeId}
+              </>
+            )}
+          </Popup>
+        </Marker>
+      ))}
     </MapContainer>
   );
 }

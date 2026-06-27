@@ -1,5 +1,6 @@
 import { getCurrentUser } from '@/lib/auth';
 import { redirect } from 'next/navigation';
+import DriverTrackingStatus from './DriverTrackingStatus';
 
 export default async function DriverDashboardPage() {
   const user = await getCurrentUser();
@@ -15,9 +16,7 @@ export default async function DriverDashboardPage() {
   return (
     <main className="min-h-screen bg-slate-50">
       <div className="max-w-7xl mx-auto p-6">
-        <h1 className="text-4xl font-black text-slate-950 mb-2">
-          Panel del Conductor
-        </h1>
+        <h1 className="text-4xl font-black text-slate-950 mb-2">Panel del Conductor</h1>
         <p className="text-slate-600">
           Bienvenido, <span className="font-bold">{user.fullname}</span>
         </p>
@@ -25,7 +24,7 @@ export default async function DriverDashboardPage() {
         {/* Driver dashboard content */}
         <div className="mt-8 bg-white rounded-lg shadow p-6">
           <h2 className="text-2xl font-bold mb-4">Estado de Servicio</h2>
-          <p className="text-slate-600">Panel de control para conductores próximamente...</p>
+          <DriverTrackingStatus />
         </div>
       </div>
     </main>
