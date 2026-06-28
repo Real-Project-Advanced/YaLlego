@@ -8,12 +8,12 @@ Due to the system's complexity, each team member has clearly defined responsibil
 
 The objectives of this document are to:
 
-* Define team roles.
-* Establish individual responsibilities.
-* Delimit work areas.
-* Facilitate the onboarding of new members.
-* Avoid duplication of efforts.
-* Guarantee the correct execution of sprints.
+- Define team roles.
+- Establish individual responsibilities.
+- Delimit work areas.
+- Facilitate the onboarding of new members.
+- Avoid duplication of efforts.
+- Guarantee the correct execution of sprints.
 
 ---
 
@@ -27,11 +27,11 @@ Responsible for defining what is built, when it is built, and why it is built.
 
 Includes:
 
-* Product Backlog
-* User Stories
-* Roadmap
-* Prioritization
-* Sprint Planning
+- Product Backlog
+- User Stories
+- Roadmap
+- Prioritization
+- Sprint Planning
 
 ---
 
@@ -41,11 +41,11 @@ Responsible for the entire visual experience of the platform.
 
 Includes:
 
-* Interfaces
-* Navigation
-* Responsive Design
-* User Experience
-* Reusable Components
+- Interfaces
+- Navigation
+- Responsive Design
+- User Experience
+- Reusable Components
 
 ---
 
@@ -55,11 +55,11 @@ Responsible for all business logic and data persistence.
 
 Includes:
 
-* APIs
-* Databases
-* Security
-* Authentication
-* Integrations
+- APIs
+- Databases
+- Security
+- Authentication
+- Integrations
 
 ---
 
@@ -69,12 +69,12 @@ Responsible for the system's cognitive layer.
 
 Includes:
 
-* Smart Chat
-* Embeddings
-* RAG (Retrieval-Augmented Generation)
-* Agents
-* Logging
-* Fine-Tuning
+- Smart Chat
+- Embeddings
+- RAG (Retrieval-Augmented Generation)
+- Agents
+- Logging
+- Fine-Tuning
 
 ---
 
@@ -84,11 +84,11 @@ Responsible for all real-time information related to locations and routes.
 
 Includes:
 
-* GPS
-* Tracking
-* Maps
-* Real-time updates
-* Bus synchronization
+- GPS
+- Tracking
+- Maps
+- Real-time updates
+- Bus synchronization
 
 ---
 
@@ -100,11 +100,11 @@ Responsible for maximizing the product's value.
 
 Functions:
 
-* Define product vision.
-* Prioritize the backlog.
-* Approve features.
-* Manage scope.
-* Validate deliverables.
+- Define product vision.
+- Prioritize the backlog.
+- Approve features.
+- Manage scope.
+- Validate deliverables.
 
 ---
 
@@ -114,10 +114,10 @@ Responsible for ensuring the correct application of Scrum.
 
 Functions:
 
-* Facilitate ceremonies.
-* Eliminate blockers.
-* Protect the team.
-* Maintain organization.
+- Facilitate ceremonies.
+- Eliminate blockers.
+- Protect the team.
+- Maintain organization.
 
 ---
 
@@ -173,21 +173,21 @@ He is responsible for maintaining the general vision of LlegoYa and ensuring tha
 
 ### Product Management
 
-* Maintain the Product Backlog.
-* Define User Stories.
-* Prioritize features.
-* Define the MVP scope.
-* Validate deliverables.
+- Maintain the Product Backlog.
+- Define User Stories.
+- Prioritize features.
+- Define the MVP scope.
+- Validate deliverables.
 
 ---
 
 ### Scrum Management
 
-* Sprint Planning.
-* Sprint Review.
-* Sprint Retrospective.
-* Daily Scrum.
-* Follow up on blockers.
+- Sprint Planning.
+- Sprint Review.
+- Sprint Retrospective.
+- Daily Scrum.
+- Follow up on blockers.
 
 ---
 
@@ -195,14 +195,14 @@ He is responsible for maintaining the general vision of LlegoYa and ensuring tha
 
 Responsible for creating and maintaining:
 
-* README
-* Product Vision
-* Project Overview
-* Architecture Document
-* Sprint Documentation
-* Release Notes
-* User Stories
-* System diagrams
+- README
+- Product Vision
+- Project Overview
+- Architecture Document
+- Sprint Documentation
+- Release Notes
+- User Stories
+- System diagrams
 
 ---
 
@@ -210,21 +210,21 @@ Responsible for creating and maintaining:
 
 Make decisions related to:
 
-* Scope.
-* Priorities.
-* Roadmap.
-* New modules.
-* Functional architecture.
+- Scope.
+- Priorities.
+- Roadmap.
+- New modules.
+- Functional architecture.
 
 ---
 
 ### Success Indicators
 
-* Updated backlog.
-* Refined stories.
-* Organized sprints.
-* Up-to-date documentation.
-* MVP delivered on time.
+- Updated backlog.
+- Refined stories.
+- Organized sprints.
+- Up-to-date documentation.
+- MVP delivered on time.
 
 ---
 
@@ -250,10 +250,10 @@ Develop the conversational system.
 
 It must answer questions such as:
 
-* Which route works for me?
-* Which buses are near me?
-* How do I get to my destination?
-* What alternatives do I have?
+- Which route works for me?
+- Which buses are near me?
+- How do I get to my destination?
+- What alternatives do I have?
 
 ---
 
@@ -279,11 +279,11 @@ Every interaction must be stored in MongoDB.
 
 Save:
 
-* Question.
-* Context.
-* Response.
-* Date.
-* User.
+- Question.
+- Context.
+- Response.
+- Date.
+- User.
 
 ---
 
@@ -291,9 +291,9 @@ Save:
 
 Reduce:
 
-* Hallucinations.
-* Ambiguous responses.
-* Incorrect information.
+- Hallucinations.
+- Ambiguous responses.
+- Incorrect information.
 
 ---
 
@@ -323,14 +323,14 @@ Daniel owns the entire visual appearance of LlegoYa.
 
 Build and improve:
 
-* Login.
-* Registration.
-* Dashboard.
-* Chat.
-* Favorites.
-* History.
-* Admin Panel.
-* Driver Panel.
+- Login.
+- Registration.
+- Dashboard.
+- Chat.
+- Favorites.
+- History.
+- Admin Panel.
+- Driver Panel.
 
 ---
 
@@ -338,10 +338,10 @@ Build and improve:
 
 Define:
 
-* Colors.
-* Spacing.
-* Typography.
-* Reusable components.
+- Colors.
+- Spacing.
+- Typography.
+- Reusable components.
 
 ---
 
@@ -349,12 +349,12 @@ Define:
 
 Implement:
 
-* Toasts.
-* Alerts.
-* Skeletons.
-* Loaders.
-* Empty states.
-* Error handling.
+- Toasts.
+- Alerts.
+- Skeletons.
+- Loaders.
+- Empty states.
+- Error handling.
 
 ---
 
@@ -362,9 +362,9 @@ Implement:
 
 Guarantee proper functionality on:
 
-* Desktop.
-* Tablet.
-* Mobile.
+- Desktop.
+- Tablet.
+- Mobile.
 
 ---
 
@@ -372,10 +372,10 @@ Guarantee proper functionality on:
 
 Design:
 
-* Login flows.
-* Session recovery.
-* Redirections.
-* Protected states.
+- Login flows.
+- Session recovery.
+- Redirections.
+- Protected states.
 
 ---
 
@@ -399,10 +399,10 @@ He will be responsible for LlegoYa's main map.
 
 Implement:
 
-* Route visualization.
-* Bus visualization.
-* Markers.
-* Information layers.
+- Route visualization.
+- Bus visualization.
+- Markers.
+- Information layers.
 
 ---
 
@@ -410,9 +410,9 @@ Implement:
 
 Evaluate and implement:
 
-* Mapbox.
-* HERE Maps.
-* Google Maps Platform.
+- Mapbox.
+- HERE Maps.
+- Google Maps Platform.
 
 ---
 
@@ -420,9 +420,9 @@ Evaluate and implement:
 
 Show:
 
-* Active buses.
-* Active routes.
-* User's current location.
+- Active buses.
+- Active routes.
+- User's current location.
 
 ---
 
@@ -452,8 +452,8 @@ While Estiven displays the data, Samuel is the one who generates and synchronize
 
 Capture:
 
-* Driver locations.
-* Bus locations.
+- Driver locations.
+- Bus locations.
 
 ---
 
@@ -483,9 +483,9 @@ Update positions every few seconds.
 
 Create APIs to:
 
-* Update location.
-* Query location.
-* Query status.
+- Update location.
+- Query location.
+- Query status.
 
 ---
 
@@ -507,10 +507,10 @@ Build the database and the core business logic of the system.
 
 Design:
 
-* Tables.
-* Relationships.
-* Indexes.
-* Permissions.
+- Tables.
+- Relationships.
+- Indexes.
+- Permissions.
 
 ---
 
@@ -518,9 +518,9 @@ Design:
 
 Manage:
 
-* History.
-* Logs.
-* Conversations.
+- History.
+- Logs.
+- Conversations.
 
 ---
 
@@ -528,9 +528,9 @@ Manage:
 
 Create:
 
-* CRUD for routes.
-* CRUD for buses.
-* CRUD for drivers.
+- CRUD for routes.
+- CRUD for buses.
+- CRUD for drivers.
 
 ---
 
@@ -538,9 +538,9 @@ Create:
 
 Connect:
 
-* Frontend.
-* Database.
-* AI.
+- Frontend.
+- Database.
+- AI.
 
 ---
 
@@ -566,10 +566,10 @@ Build the mobile experience for both users and drivers.
 
 Functions:
 
-* Route queries.
-* AI Chat.
-* Favorites.
-* History.
+- Route queries.
+- AI Chat.
+- Favorites.
+- History.
 
 ---
 
@@ -577,10 +577,10 @@ Functions:
 
 Functions:
 
-* Start trip.
-* End trip.
-* Share location.
-* Report incidents.
+- Start trip.
+- End trip.
+- Share location.
+- Report incidents.
 
 ---
 
@@ -598,11 +598,11 @@ Maintain consistency with the web application.
 
 All team members are responsible for:
 
-* Maintaining clean code.
-* Documenting changes.
-* Following Git Flow.
-* Participating in reviews.
-* Reporting blockers.
-* Meeting the Definition of Done.
+- Maintaining clean code.
+- Documenting changes.
+- Following Git Flow.
+- Participating in reviews.
+- Reporting blockers.
+- Meeting the Definition of Done.
 
 The success of LlegoYa depends on the collaboration between all areas, not just individual work.

@@ -73,7 +73,12 @@ export async function middleware(request: NextRequest) {
 
     return NextResponse.next();
   }
-
+  if (isPublicRoute) {
+    if (isAuthRoute && user) {
+      return NextResponse.redirect(new URL(getPostLoginPath(user.role), request.url));
+    }
+    return NextResponse.next();
+  }
   if (!user) {
     user = refreshToken ? await verifyToken(refreshToken, refreshSecret) : null;
 
