@@ -1,32 +1,13 @@
 'use client';
 
-import {
-  BriefcaseBusiness,
-  Building2,
-  GraduationCap,
-  Heart,
-  Home,
-  Info,
-  Landmark,
-  MapPin,
-  Navigation,
-  Route,
-  Utensils,
-} from 'lucide-react';
+import { Heart, Info, Navigation, Route } from 'lucide-react';
 import L from 'leaflet';
-import { useState, type PointerEvent } from 'react';
-import { MapContainer, Marker, Polyline, Popup, TileLayer } from 'react-leaflet';
+import { useEffect, useState, type PointerEvent } from 'react';
+import { MapContainer, Marker, Polyline, Popup, TileLayer, useMap } from 'react-leaflet';
 
 import 'leaflet/dist/leaflet.css';
-import '@/lib/maps/leaflet-config';
 import { medellinBounds } from '@/lib/maps/medellin-bounds';
-import {
-  getStopLogoOption,
-  stopLogoOptions,
-  type Parada,
-  type SearchRouteResult,
-  type StopLogoId,
-} from './UserRouteMapShared';
+import { getStopLogoOption, type Parada, type SearchRouteResult } from './UserRouteMapShared';
 
 type UserRouteMapClientProps = {
   routes: SearchRouteResult[];
@@ -90,6 +71,36 @@ const createStopIcon = (parada: Parada, isActive: boolean) => {
   });
 };
 
+function MapSizeInvalidator() {
+  const map = useMap();
+
+  useEffect(() => {
+    const invalidateMapSize = () => {
+      map.invalidateSize({ animate: false });
+    };
+    const container = map.getContainer();
+    const resizeObserver =
+      typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(invalidateMapSize);
+    const timeouts = [80, 250, 600, 1200].map((delay) =>
+      window.setTimeout(invalidateMapSize, delay),
+    );
+
+    invalidateMapSize();
+    resizeObserver?.observe(container);
+    window.addEventListener('resize', invalidateMapSize);
+    window.addEventListener('orientationchange', invalidateMapSize);
+
+    return () => {
+      timeouts.forEach((timeout) => window.clearTimeout(timeout));
+      resizeObserver?.disconnect();
+      window.removeEventListener('resize', invalidateMapSize);
+      window.removeEventListener('orientationchange', invalidateMapSize);
+    };
+  }, [map]);
+
+  return null;
+}
+
 export default function UserRouteMapClient({
   routes,
   selectedRouteId,
@@ -150,9 +161,10 @@ export default function UserRouteMapClient({
         className="relative z-0 h-full w-full"
         scrollWheelZoom={false}
       >
+        <MapSizeInvalidator />
         <TileLayer
           attribution="&copy; OpenStreetMap contributors &copy; CARTO"
-          url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
 
         {routes.map((route) => {

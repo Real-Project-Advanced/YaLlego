@@ -1,21 +1,21 @@
-'use client'
+'use client';
 
-import { MapContainer, TileLayer } from 'react-leaflet'
+import { MapContainer, TileLayer } from 'react-leaflet';
 
-import 'leaflet/dist/leaflet.css'
-import '@/lib/maps/leaflet-config'
-import { medellinBounds } from '@/lib/maps/medellin-bounds'
-import { mockRoutes } from '@/lib/maps/mock-routes'
-import { mockBuses } from '@//lib/maps/mock-buses'
+import 'leaflet/dist/leaflet.css';
+import '@/lib/maps/leaflet-config';
+import { medellinBounds } from '@/lib/maps/medellin-bounds';
+import { mockRoutes } from '@/lib/maps/mock-routes';
+import { mockBuses } from '@//lib/maps/mock-buses';
 
-import RoutePolyline from './RoutePolyline'
-import BusMarker from './BusMarker'
-import RouteSidebar from './RouteSidebar'
+import RoutePolyline from './RoutePolyline';
+import BusMarker from './BusMarker';
+import RouteSidebar from './RouteSidebar';
 
 export default function MapView() {
   return (
-    <div className="flex h-screen w-full">
-      <div className="flex-1">
+    <div className="flex h-screen w-full overflow-hidden">
+      <div className="flex-1 h-full min-h-0">
         <MapContainer
           center={[6.2442, -75.5812]}
           zoom={13}
@@ -45,5 +45,5 @@ export default function MapView() {
 
       <RouteSidebar />
     </div>
-  )
+  );
 }

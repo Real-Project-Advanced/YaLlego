@@ -5,7 +5,7 @@ const config: CapacitorConfig = {
   appName: 'YaLlego',
   webDir: 'out',
   server: {
-    url: 'http://10.0.80.6:3000',
+    url: 'http://192.168.26.6:3000',
     cleartext: true,
   },
 };
