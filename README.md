@@ -1,4 +1,3 @@
-````md
 # LlegoYa
 
 LlegoYa is a full-stack urban mobility platform for Medellín. The project aims to help public transportation users find routes, track buses, and receive smart travel recommendations through a modern web experience with interactive maps, role-based authentication, and an AI assistant specialized in urban mobility.
@@ -55,17 +54,17 @@ LlegoYa supports three main user roles:
 
 # Technology Stack
 
-| Category | Technology |
-|----------|------------|
-| Framework | Next.js 16 (App Router) |
-| Language | TypeScript |
-| UI | React 19, Tailwind CSS 4, Radix UI, Lucide React |
-| Maps | Leaflet, React Leaflet |
-| Database | PostgreSQL with Prisma 7 and `@prisma/adapter-pg` |
-| External Services | Supabase Client, MongoDB Client |
-| Authentication | JWT (`jose`), `httpOnly` cookies, `bcryptjs` |
-| AI | Ollama (local AI service) |
-| Code Quality | ESLint, Prettier, Husky, lint-staged |
+| Category          | Technology                                        |
+| ----------------- | ------------------------------------------------- |
+| Framework         | Next.js 16 (App Router)                           |
+| Language          | TypeScript                                        |
+| UI                | React 19, Tailwind CSS 4, Radix UI, Lucide React  |
+| Maps              | Leaflet, React Leaflet                            |
+| Database          | PostgreSQL with Prisma 7 and `@prisma/adapter-pg` |
+| External Services | Supabase Client, MongoDB Client                   |
+| Authentication    | JWT (`jose`), `httpOnly` cookies, `bcryptjs`      |
+| AI                | Ollama (local AI service)                         |
+| Code Quality      | ESLint, Prettier, Husky, lint-staged              |
 
 ---
 
@@ -87,7 +86,7 @@ LlegoYa supports three main user roles:
 ├── ARQUITECTURA.md         # Architecture notes
 ├── TOKENS.md               # Authentication and token documentation
 └── package.json
-````
+```
 
 ---
 
@@ -97,19 +96,19 @@ LlegoYa supports three main user roles:
 
 The authentication module is mainly located in:
 
-* `src/modules/auth`
-* `src/lib/auth.ts`
-* `src/middleware.ts`
-* `src/app/api/auth`
+- `src/modules/auth`
+- `src/lib/auth.ts`
+- `src/middleware.ts`
+- `src/app/api/auth`
 
 Features include:
 
-* User registration and login
-* Password hashing
-* Access and refresh tokens
-* Secure `httpOnly` cookies
-* Route protection middleware
-* Role-based redirection after login
+- User registration and login
+- Password hashing
+- Access and refresh tokens
+- Secure `httpOnly` cookies
+- Route protection middleware
+- Role-based redirection after login
 
 ---
 
@@ -117,11 +116,11 @@ Features include:
 
 The user module is located in `src/modules/user` and includes:
 
-* User dashboard
-* Route search
-* Favorite routes
-* News section
-* AI chatbot
+- User dashboard
+- Route search
+- Favorite routes
+- News section
+- AI chatbot
 
 ---
 
@@ -129,15 +128,15 @@ The user module is located in `src/modules/user` and includes:
 
 Located in:
 
-* `src/modules/routes`
-* `src/lib/maps`
+- `src/modules/routes`
+- `src/lib/maps`
 
 It uses Leaflet to display:
 
-* Medellín city map
-* Simulated transportation routes
-* Simulated buses
-* Geographic boundaries
+- Medellín city map
+- Simulated transportation routes
+- Simulated buses
+- Geographic boundaries
 
 ---
 
@@ -151,8 +150,8 @@ It connects to Ollama using a system prompt focused exclusively on urban mobilit
 
 Related environment variables:
 
-* `OLLAMA_ENDPOINT`
-* `OLLAMA_MODEL`
+- `OLLAMA_ENDPOINT`
+- `OLLAMA_MODEL`
 
 ---
 
@@ -164,11 +163,11 @@ The main relational schema is defined in:
 
 Current entities include:
 
-* `users`
-* `drivers`
-* `transports`
-* `routes`
-* `user_role`
+- `users`
+- `drivers`
+- `transports`
+- `routes`
+- `user_role`
 
 ---
 
@@ -176,12 +175,12 @@ Current entities include:
 
 Before running the project, make sure you have:
 
-* Node.js compatible with Next.js 16
-* npm
-* PostgreSQL configured through `DATABASE_URL`
-* Ollama installed and running (optional, required for the AI chatbot)
-* MongoDB (optional, for logging and future AI features)
-* Supabase credentials (optional)
+- Node.js compatible with Next.js 16
+- npm
+- PostgreSQL configured through `DATABASE_URL`
+- Ollama installed and running (optional, required for the AI chatbot)
+- MongoDB (optional, for logging and future AI features)
+- Supabase credentials (optional)
 
 ---
 
@@ -208,9 +207,9 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY="your-anon-key"
 
 For local development, the most important variables are:
 
-* `DATABASE_URL`
-* `JWT_SECRET`
-* `JWT_REFRESH_SECRET`
+- `DATABASE_URL`
+- `JWT_SECRET`
+- `JWT_REFRESH_SECRET`
 
 MongoDB, Supabase, and Ollama are only required if you want to test those specific features.
 
@@ -284,13 +283,13 @@ npm run db:push      # Synchronize Prisma schema
 
 # Development Guidelines
 
-* Use strict TypeScript and avoid `any`.
-* Keep UI, business logic, data access, and types separated by module.
-* Prefer reusable components inside `src/components` or the corresponding module.
-* Store shared validation logic in `src/shared/validators`.
-* Run linting and formatting before opening a Pull Request.
-* Never commit real secrets or sensitive environment variables.
-* Contribute through Pull Requests targeting protected branches.
+- Use strict TypeScript and avoid `any`.
+- Keep UI, business logic, data access, and types separated by module.
+- Prefer reusable components inside `src/components` or the corresponding module.
+- Store shared validation logic in `src/shared/validators`.
+- Run linting and formatting before opening a Pull Request.
+- Never commit real secrets or sensitive environment variables.
+- Contribute through Pull Requests targeting protected branches.
 
 ---
 
@@ -300,11 +299,11 @@ Functional and organizational documentation is available in the `documentation/`
 
 Spanish:
 
-* `documentation/ES/PRODUCT_VISION.md`
-* `documentation/ES/PROJECT-OVERVIEW.md`
-* `documentation/ES/USER_ROLES.md`
-* `documentation/ES/SPRINT_PLANNING.md`
-* `documentation/ES/RESPONSABILITIES.md`
+- `documentation/ES/PRODUCT_VISION.md`
+- `documentation/ES/PROJECT-OVERVIEW.md`
+- `documentation/ES/USER_ROLES.md`
+- `documentation/ES/SPRINT_PLANNING.md`
+- `documentation/ES/RESPONSABILITIES.md`
 
 English versions are also available in:
 
@@ -318,14 +317,14 @@ documentation/EN/
 
 Planned future features include:
 
-* Real-time GPS tracking for buses and drivers.
-* Complete management of routes, vehicles, and assignments.
-* Persistent route history and favorite routes.
-* Smart service disruption alerts.
-* Data-driven travel recommendations.
-* RAG integration to provide up-to-date operational information.
-* Analytics dashboards for transportation companies and administrators.
-* Mobile application.
+- Real-time GPS tracking for buses and drivers.
+- Complete management of routes, vehicles, and assignments.
+- Persistent route history and favorite routes.
+- Smart service disruption alerts.
+- Data-driven travel recommendations.
+- RAG integration to provide up-to-date operational information.
+- Analytics dashboards for transportation companies and administrators.
+- Mobile application.
 
 ---
 
@@ -334,4 +333,5 @@ Planned future features include:
 This project is private and intended for academic and professional use by the LlegoYa development team, unless a different license is specified in the repository.
 
 ```
+
 ```

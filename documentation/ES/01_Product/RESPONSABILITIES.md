@@ -8,12 +8,12 @@ Debido a la complejidad del sistema, cada integrante posee responsabilidades cla
 
 Este documento tiene como objetivo:
 
-* Definir los roles del equipo.
-* Establecer responsabilidades individuales.
-* Delimitar áreas de trabajo.
-* Facilitar el onboarding de nuevos integrantes.
-* Evitar duplicidad de esfuerzos.
-* Garantizar la correcta ejecución de los sprints.
+- Definir los roles del equipo.
+- Establecer responsabilidades individuales.
+- Delimitar áreas de trabajo.
+- Facilitar el onboarding de nuevos integrantes.
+- Evitar duplicidad de esfuerzos.
+- Garantizar la correcta ejecución de los sprints.
 
 ---
 
@@ -27,11 +27,11 @@ Responsable de definir qué se construye, cuándo se construye y por qué se con
 
 Incluye:
 
-* Product Backlog
-* Historias de Usuario
-* Roadmap
-* Priorización
-* Planeación de Sprints
+- Product Backlog
+- Historias de Usuario
+- Roadmap
+- Priorización
+- Planeación de Sprints
 
 ---
 
@@ -41,11 +41,11 @@ Responsable de toda la experiencia visual de la plataforma.
 
 Incluye:
 
-* Interfaces
-* Navegación
-* Diseño Responsive
-* Experiencia de Usuario
-* Componentes reutilizables
+- Interfaces
+- Navegación
+- Diseño Responsive
+- Experiencia de Usuario
+- Componentes reutilizables
 
 ---
 
@@ -55,11 +55,11 @@ Responsable de toda la lógica de negocio y persistencia.
 
 Incluye:
 
-* APIs
-* Bases de Datos
-* Seguridad
-* Autenticación
-* Integraciones
+- APIs
+- Bases de Datos
+- Seguridad
+- Autenticación
+- Integraciones
 
 ---
 
@@ -69,12 +69,12 @@ Responsable de la capa cognitiva del sistema.
 
 Incluye:
 
-* Chat Inteligente
-* Embeddings
-* RAG
-* Agentes
-* Logging
-* Fine-Tuning
+- Chat Inteligente
+- Embeddings
+- RAG
+- Agentes
+- Logging
+- Fine-Tuning
 
 ---
 
@@ -84,11 +84,11 @@ Responsable de toda la información en tiempo real relacionada con ubicación y 
 
 Incluye:
 
-* GPS
-* Tracking
-* Mapas
-* Actualizaciones en tiempo real
-* Sincronización de buses
+- GPS
+- Tracking
+- Mapas
+- Actualizaciones en tiempo real
+- Sincronización de buses
 
 ---
 
@@ -100,11 +100,11 @@ Responsable de maximizar el valor del producto.
 
 Funciones:
 
-* Definir visión del producto.
-* Priorizar backlog.
-* Aprobar funcionalidades.
-* Gestionar alcance.
-* Validar entregables.
+- Definir visión del producto.
+- Priorizar backlog.
+- Aprobar funcionalidades.
+- Gestionar alcance.
+- Validar entregables.
 
 ---
 
@@ -114,10 +114,10 @@ Responsable de garantizar la correcta aplicación de Scrum.
 
 Funciones:
 
-* Facilitar ceremonias.
-* Eliminar bloqueos.
-* Proteger al equipo.
-* Mantener la organización.
+- Facilitar ceremonias.
+- Eliminar bloqueos.
+- Proteger al equipo.
+- Mantener la organización.
 
 ---
 
@@ -173,21 +173,21 @@ Es el responsable de mantener la visión general de LlegoYa y asegurar que todos
 
 ### Gestión del Producto
 
-* Mantener Product Backlog.
-* Definir Historias de Usuario.
-* Priorizar funcionalidades.
-* Definir alcance del MVP.
-* Validar entregables.
+- Mantener Product Backlog.
+- Definir Historias de Usuario.
+- Priorizar funcionalidades.
+- Definir alcance del MVP.
+- Validar entregables.
 
 ---
 
 ### Gestión Scrum
 
-* Sprint Planning.
-* Sprint Review.
-* Sprint Retrospective.
-* Daily Scrum.
-* Seguimiento de bloqueos.
+- Sprint Planning.
+- Sprint Review.
+- Sprint Retrospective.
+- Daily Scrum.
+- Seguimiento de bloqueos.
 
 ---
 
@@ -195,14 +195,14 @@ Es el responsable de mantener la visión general de LlegoYa y asegurar que todos
 
 Responsable de crear y mantener:
 
-* README
-* Product Vision
-* Project Overview
-* Architecture Document
-* Sprint Documentation
-* Release Notes
-* User Stories
-* Diagramas del sistema
+- README
+- Product Vision
+- Project Overview
+- Architecture Document
+- Sprint Documentation
+- Release Notes
+- User Stories
+- Diagramas del sistema
 
 ---
 
@@ -210,21 +210,21 @@ Responsable de crear y mantener:
 
 Tomar decisiones relacionadas con:
 
-* Alcance.
-* Prioridades.
-* Roadmap.
-* Nuevos módulos.
-* Arquitectura funcional.
+- Alcance.
+- Prioridades.
+- Roadmap.
+- Nuevos módulos.
+- Arquitectura funcional.
 
 ---
 
 ### Indicadores de Éxito
 
-* Backlog actualizado.
-* Historias refinadas.
-* Sprints organizados.
-* Documentación actualizada.
-* MVP entregado en tiempo.
+- Backlog actualizado.
+- Historias refinadas.
+- Sprints organizados.
+- Documentación actualizada.
+- MVP entregado en tiempo.
 
 ---
 
@@ -250,10 +250,10 @@ Desarrollar el sistema conversacional.
 
 Debe responder preguntas como:
 
-* ¿Qué ruta me sirve?
-* ¿Qué buses tengo cerca?
-* ¿Cómo llego a mi destino?
-* ¿Qué alternativas tengo?
+- ¿Qué ruta me sirve?
+- ¿Qué buses tengo cerca?
+- ¿Cómo llego a mi destino?
+- ¿Qué alternativas tengo?
 
 ---
 
@@ -279,11 +279,11 @@ Toda interacción debe almacenarse en MongoDB.
 
 Guardar:
 
-* Pregunta.
-* Contexto.
-* Respuesta.
-* Fecha.
-* Usuario.
+- Pregunta.
+- Contexto.
+- Respuesta.
+- Fecha.
+- Usuario.
 
 ---
 
@@ -291,9 +291,9 @@ Guardar:
 
 Reducir:
 
-* Alucinaciones.
-* Respuestas ambiguas.
-* Información incorrecta.
+- Alucinaciones.
+- Respuestas ambiguas.
+- Información incorrecta.
 
 ---
 
@@ -323,14 +323,14 @@ Daniel es dueño de toda la apariencia visual de LlegoYa.
 
 Construir y mejorar:
 
-* Login.
-* Registro.
-* Dashboard.
-* Chat.
-* Favoritos.
-* Historial.
-* Panel Admin.
-* Panel Conductor.
+- Login.
+- Registro.
+- Dashboard.
+- Chat.
+- Favoritos.
+- Historial.
+- Panel Admin.
+- Panel Conductor.
 
 ---
 
@@ -338,10 +338,10 @@ Construir y mejorar:
 
 Definir:
 
-* Colores.
-* Espaciados.
-* Tipografías.
-* Componentes reutilizables.
+- Colores.
+- Espaciados.
+- Tipografías.
+- Componentes reutilizables.
 
 ---
 
@@ -349,12 +349,12 @@ Definir:
 
 Implementar:
 
-* Toasts.
-* Alertas.
-* Skeletons.
-* Loaders.
-* Estados vacíos.
-* Manejo de errores.
+- Toasts.
+- Alertas.
+- Skeletons.
+- Loaders.
+- Estados vacíos.
+- Manejo de errores.
 
 ---
 
@@ -362,9 +362,9 @@ Implementar:
 
 Garantizar funcionamiento en:
 
-* Desktop.
-* Tablet.
-* Mobile.
+- Desktop.
+- Tablet.
+- Mobile.
 
 ---
 
@@ -372,10 +372,10 @@ Garantizar funcionamiento en:
 
 Diseñar:
 
-* Flujos de Login.
-* Recuperación de sesión.
-* Redirecciones.
-* Estados protegidos.
+- Flujos de Login.
+- Recuperación de sesión.
+- Redirecciones.
+- Estados protegidos.
 
 ---
 
@@ -399,10 +399,10 @@ Será responsable del mapa principal de LlegoYa.
 
 Implementar:
 
-* Visualización de rutas.
-* Visualización de buses.
-* Marcadores.
-* Capas de información.
+- Visualización de rutas.
+- Visualización de buses.
+- Marcadores.
+- Capas de información.
 
 ---
 
@@ -410,9 +410,9 @@ Implementar:
 
 Evaluar e implementar:
 
-* Mapbox.
-* HERE Maps.
-* Google Maps Platform.
+- Mapbox.
+- HERE Maps.
+- Google Maps Platform.
 
 ---
 
@@ -420,9 +420,9 @@ Evaluar e implementar:
 
 Mostrar:
 
-* Buses activos.
-* Rutas activas.
-* Ubicación actual del usuario.
+- Buses activos.
+- Rutas activas.
+- Ubicación actual del usuario.
 
 ---
 
@@ -452,8 +452,8 @@ Mientras Estiven muestra los datos, Samuel es quien los genera y sincroniza.
 
 Capturar:
 
-* Ubicación de conductores.
-* Ubicación de buses.
+- Ubicación de conductores.
+- Ubicación de buses.
 
 ---
 
@@ -483,9 +483,9 @@ Actualizar posiciones cada pocos segundos.
 
 Crear APIs para:
 
-* Actualizar ubicación.
-* Consultar ubicación.
-* Consultar estado.
+- Actualizar ubicación.
+- Consultar ubicación.
+- Consultar estado.
 
 ---
 
@@ -507,10 +507,10 @@ Construir la base de datos y la lógica de negocio principal del sistema.
 
 Diseñar:
 
-* Tablas.
-* Relaciones.
-* Índices.
-* Permisos.
+- Tablas.
+- Relaciones.
+- Índices.
+- Permisos.
 
 ---
 
@@ -518,9 +518,9 @@ Diseñar:
 
 Gestionar:
 
-* Historial.
-* Logs.
-* Conversaciones.
+- Historial.
+- Logs.
+- Conversaciones.
 
 ---
 
@@ -528,9 +528,9 @@ Gestionar:
 
 Crear:
 
-* CRUD de rutas.
-* CRUD de buses.
-* CRUD de conductores.
+- CRUD de rutas.
+- CRUD de buses.
+- CRUD de conductores.
 
 ---
 
@@ -538,9 +538,9 @@ Crear:
 
 Conectar:
 
-* Frontend.
-* Base de datos.
-* IA.
+- Frontend.
+- Base de datos.
+- IA.
 
 ---
 
@@ -566,10 +566,10 @@ Construir la experiencia móvil para usuarios y conductores.
 
 Funciones:
 
-* Consulta de rutas.
-* Chat IA.
-* Favoritos.
-* Historial.
+- Consulta de rutas.
+- Chat IA.
+- Favoritos.
+- Historial.
 
 ---
 
@@ -577,10 +577,10 @@ Funciones:
 
 Funciones:
 
-* Inicio de recorrido.
-* Fin de recorrido.
-* Compartir ubicación.
-* Reportar incidentes.
+- Inicio de recorrido.
+- Fin de recorrido.
+- Compartir ubicación.
+- Reportar incidentes.
 
 ---
 
@@ -598,11 +598,11 @@ Mantener consistencia con la aplicación web.
 
 Todos los integrantes son responsables de:
 
-* Mantener código limpio.
-* Documentar cambios.
-* Seguir Git Flow.
-* Participar en revisiones.
-* Reportar bloqueos.
-* Cumplir Definition of Done.
+- Mantener código limpio.
+- Documentar cambios.
+- Seguir Git Flow.
+- Participar en revisiones.
+- Reportar bloqueos.
+- Cumplir Definition of Done.
 
 El éxito de LlegoYa depende de la colaboración entre todas las áreas y no únicamente del trabajo individual.
