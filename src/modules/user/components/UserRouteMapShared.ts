@@ -1,11 +1,17 @@
 import {
-  Home,
+  Bike,
   BriefcaseBusiness,
-  GraduationCap,
-  Landmark,
-  Utensils,
   Building2,
+  BusFront,
+  Dumbbell,
+  Landmark,
+  GraduationCap,
+  HeartPulse,
+  Home,
   MapPin,
+  ShoppingBag,
+  Star,
+  Utensils,
 } from 'lucide-react';
 
 export type SearchRouteResult = {
@@ -26,7 +32,20 @@ export type SearchRouteResult = {
   coordinates: [number, number][];
 };
 
-export type StopLogoId = 'home' | 'work' | 'study' | 'tourism' | 'food' | 'building' | 'public';
+export type StopLogoId =
+  | 'home'
+  | 'work'
+  | 'study'
+  | 'tourism'
+  | 'food'
+  | 'building'
+  | 'public'
+  | 'transport'
+  | 'shopping'
+  | 'health'
+  | 'gym'
+  | 'favorite'
+  | 'bike';
 
 export type Parada = {
   id: string;
@@ -46,13 +65,19 @@ export const stopLogoOptions: Array<{
   color: string;
   icon: typeof Home;
 }> = [
-  { id: 'home', label: 'Casa', color: '#bae6fd', icon: Home },
-  { id: 'work', label: 'Trabajo', color: '#c7d2fe', icon: BriefcaseBusiness },
-  { id: 'study', label: 'Estudio', color: '#bbf7d0', icon: GraduationCap },
-  { id: 'tourism', label: 'Turismo', color: '#fde68a', icon: Landmark },
-  { id: 'food', label: 'Comida', color: '#fecdd3', icon: Utensils },
-  { id: 'building', label: 'Edificio', color: '#ddd6fe', icon: Building2 },
-  { id: 'public', label: 'Publico', color: '#a7f3d0', icon: MapPin },
+  { id: 'home', label: 'Casa', color: '#7dd3fc', icon: Home },
+  { id: 'work', label: 'Trabajo', color: '#a5b4fc', icon: BriefcaseBusiness },
+  { id: 'study', label: 'Estudio', color: '#86efac', icon: GraduationCap },
+  { id: 'tourism', label: 'Turismo', color: '#fde047', icon: Landmark },
+  { id: 'food', label: 'Comida', color: '#fda4af', icon: Utensils },
+  { id: 'building', label: 'Edificio', color: '#c4b5fd', icon: Building2 },
+  { id: 'public', label: 'Publico', color: '#6ee7b7', icon: MapPin },
+  { id: 'transport', label: 'Transporte', color: '#67e8f9', icon: BusFront },
+  { id: 'shopping', label: 'Compras', color: '#f9a8d4', icon: ShoppingBag },
+  { id: 'health', label: 'Salud', color: '#5eead4', icon: HeartPulse },
+  { id: 'gym', label: 'Gimnasio', color: '#fdba74', icon: Dumbbell },
+  { id: 'favorite', label: 'Favorito', color: '#fca5a5', icon: Star },
+  { id: 'bike', label: 'Bici', color: '#bef264', icon: Bike },
 ];
 
 export const getStopLogoOption = (logoId?: string) =>

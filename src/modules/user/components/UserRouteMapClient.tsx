@@ -29,15 +29,18 @@ const createPointIcon = (color: string, label: string) =>
         justify-content:center;
         width:48px;
         height:48px;
-        border-radius:9999px;
+        border-radius:18px 18px 18px 4px;
         border: 3px solid rgba(255,255,255,0.98);
         background: ${color};
-        box-shadow: 0 0 24px 6px rgba(56,189,248,0.35);
+        box-shadow: 0 18px 34px rgba(15,23,42,0.28), 0 0 0 7px rgba(255,255,255,0.55);
         font-weight: bold;
         font-size: 20px;
         color: white;
         text-shadow: 0 1px 2px rgba(0,0,0,0.4);
-      ">${label.charAt(0)}</span>
+        transform: rotate(-45deg);
+      "><span style="transform: rotate(45deg); display:inline-block;">
+        ${label.charAt(0)}
+      </span></span>
     `,
     iconSize: [48, 48],
     iconAnchor: [24, 24],
@@ -60,7 +63,7 @@ const createStopIcon = (parada: Parada, isActive: boolean) => {
     html: `
       <span title="${parada.titulo}" class="stop-marker-shell">
         <span class="stop-marker ${isActive ? 'stop-marker-active' : ''}" style="--stop-logo-bg: ${logoOption.color};">
-          <span class="stop-marker-symbol">${fallbackLabel || logoOption.label[0]}</span>
+          <span class="stop-marker-symbol">${fallbackLabel || logoOption.label.slice(0, 2).toUpperCase()}</span>
         </span>
         ${parada.esFavorito ? '<span class="stop-marker-favorite">♥</span>' : ''}
       </span>
@@ -150,7 +153,7 @@ export default function UserRouteMapClient({
   };
 
   return (
-    <div className="relative z-0 h-full min-h-[360px] overflow-hidden bg-slate-100">
+    <div className="relative z-0 h-full min-h-[360px] overflow-hidden bg-[#dff7f4]">
       <MapContainer
         center={[6.2442, -75.5812]}
         zoom={12}
@@ -164,7 +167,7 @@ export default function UserRouteMapClient({
         <MapSizeInvalidator />
         <TileLayer
           attribution="&copy; OpenStreetMap contributors &copy; CARTO"
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
         />
 
         {routes.map((route) => {
@@ -176,9 +179,9 @@ export default function UserRouteMapClient({
               positions={route.coordinates}
               eventHandlers={{ click: () => onSelectRoute(route.id) }}
               pathOptions={{
-                color: '#2563eb',
-                opacity: isSelected ? 0.95 : 0.28,
-                weight: isSelected ? 7 : 4,
+                color: isSelected ? '#0891b2' : '#2563eb',
+                opacity: isSelected ? 1 : 0.34,
+                weight: isSelected ? 8 : 4,
                 dashArray: isSelected ? undefined : '14,10',
                 lineCap: 'round',
                 lineJoin: 'round',
@@ -192,7 +195,7 @@ export default function UserRouteMapClient({
           <>
             <Marker
               position={[selectedRoute.startPoint.lat, selectedRoute.startPoint.lng]}
-              icon={createPointIcon('rgba(34,211,238,0.98)', 'Origen')}
+              icon={createPointIcon('linear-gradient(135deg,#06b6d4,#0891b2)', 'Origen')}
             >
               <Popup>
                 <div className="space-y-1 text-sm">
@@ -204,7 +207,7 @@ export default function UserRouteMapClient({
 
             <Marker
               position={[selectedRoute.endPoint.lat, selectedRoute.endPoint.lng]}
-              icon={createPointIcon('rgba(244,63,94,0.95)', 'Destino')}
+              icon={createPointIcon('linear-gradient(135deg,#f43f5e,#be123c)', 'Destino')}
             >
               <Popup>
                 <div className="space-y-1 text-sm">
@@ -243,13 +246,13 @@ export default function UserRouteMapClient({
                 }}
               >
                 <article
-                  className="w-[300px] overflow-hidden rounded-lg border border-slate-200 bg-white text-slate-950 shadow-2xl shadow-slate-950/20"
+                  className="w-[300px] overflow-hidden rounded-lg border border-cyan-100 bg-white text-slate-950 shadow-2xl shadow-cyan-950/20"
                   style={{
                     transform: `translate(${popupOffset.x}px, ${popupOffset.y}px)`,
                   }}
                 >
                   <div
-                    className="cursor-grab touch-none border-b border-slate-200 bg-slate-950 p-4 text-white active:cursor-grabbing"
+                    className="cursor-grab touch-none border-b border-cyan-900/20 bg-[linear-gradient(135deg,#0f172a,#0e7490)] p-4 text-white active:cursor-grabbing"
                     onPointerDown={handlePopupDragStart}
                     onPointerMove={handlePopupDragMove}
                     onPointerUp={handlePopupDragEnd}
@@ -311,11 +314,12 @@ export default function UserRouteMapClient({
         })}
       </MapContainer>
 
-      <div className="pointer-events-none absolute inset-0 z-[1] bg-[radial-gradient(circle_at_50%_45%,rgba(34,211,238,0.08),transparent_34%),linear-gradient(180deg,rgba(255,255,255,0.35),rgba(255,255,255,0)_26%,rgba(255,255,255,0.45))]" />
+      <div className="pointer-events-none absolute inset-0 z-[1] bg-[linear-gradient(180deg,rgba(255,255,255,0.10),rgba(255,255,255,0)_24%,rgba(8,145,178,0.08))]" />
 
       <style jsx global>{`
         .route-glow {
-          filter: drop-shadow(0 0 14px rgba(14, 165, 233, 0.32));
+          filter: drop-shadow(0 0 16px rgba(8, 145, 178, 0.52))
+            drop-shadow(0 8px 12px rgba(15, 23, 42, 0.18));
         }
 
         .custom-leaflet-icon,
@@ -332,19 +336,20 @@ export default function UserRouteMapClient({
 
         .stop-marker {
           display: grid;
-          width: 42px;
-          height: 42px;
+          width: 46px;
+          height: 46px;
           place-items: center;
-          border-radius: 9999px;
+          border-radius: 17px 17px 17px 5px;
           border: 3px solid #ffffff;
           overflow: hidden;
           background: var(--stop-logo-bg, #ffffff);
           color: #0f172a;
           font-size: 12px;
           font-weight: 950;
+          transform: rotate(-45deg);
           box-shadow:
-            0 16px 34px rgba(15, 23, 42, 0.22),
-            0 0 0 7px rgba(255, 255, 255, 0.52);
+            0 18px 34px rgba(15, 23, 42, 0.26),
+            0 0 0 7px rgba(255, 255, 255, 0.5);
         }
 
         .stop-marker-logo {
@@ -354,14 +359,16 @@ export default function UserRouteMapClient({
         }
 
         .stop-marker-symbol {
-          display: none;
+          display: block;
+          transform: rotate(45deg);
+          letter-spacing: 0;
         }
 
         .stop-marker-active {
           box-shadow:
-            0 18px 38px rgba(15, 23, 42, 0.24),
-            0 0 0 8px rgba(34, 211, 238, 0.24),
-            0 0 0 12px rgba(255, 255, 255, 0.62);
+            0 20px 42px rgba(15, 23, 42, 0.3),
+            0 0 0 8px rgba(34, 211, 238, 0.32),
+            0 0 0 13px rgba(255, 255, 255, 0.65);
         }
 
         .stop-marker-favorite {
@@ -394,8 +401,12 @@ export default function UserRouteMapClient({
         }
 
         .leaflet-container {
-          background: #f8fafc;
+          background: #dff7f4;
           z-index: 0;
+        }
+
+        .leaflet-tile {
+          filter: saturate(1.14) contrast(1.04);
         }
       `}</style>
     </div>
