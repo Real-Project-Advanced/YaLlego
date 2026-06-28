@@ -49,7 +49,7 @@ export function UserDashboard({ user }: UserDashboardProps) {
           </Link>
 
           <nav
-            className="flex flex-wrap items-center justify-end gap-2"
+            className="hidden flex-wrap items-center justify-end gap-2 md:flex"
             aria-label="Controles de vista de rutas"
           >
             {routePanelButtons.map((item) => {
@@ -82,7 +82,11 @@ export function UserDashboard({ user }: UserDashboardProps) {
       <div className="relative">
         <div className="flex min-h-[calc(100vh-88px)] flex-col lg:flex-row">
           <div className="w-full lg:flex-1">
-            <UserRouteSearch visiblePanels={visiblePanels} onTogglePanel={toggleRoutePanel} />
+            <UserRouteSearch
+              user={user}
+              visiblePanels={visiblePanels}
+              onTogglePanel={toggleRoutePanel}
+            />
           </div>
         </div>
       </div>

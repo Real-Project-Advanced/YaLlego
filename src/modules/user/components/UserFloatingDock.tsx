@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import { Bell, Bot, Heart, History, MapPinned, PanelRightClose, UserRound } from 'lucide-react';
 import type { UserPayload } from '@/lib/auth';
 import { UserChatbotPanel } from './UserChatbotPanel';
-import type { Parada } from './UserRouteMapClient';
+import type { Parada } from './UserRouteMapShared';
 
 type UserFloatingDockProps = {
   user: UserPayload;
@@ -53,6 +53,7 @@ const normalizeStoredStop = (item: StoredStop): Parada | null => {
     id: item.id,
     latitud,
     longitud,
+    logoId: item.logoId ?? 'home',
     logoUrl: item.logoUrl ?? '',
     titulo,
     descripcion: descripcion ?? 'Parada guardada.',
@@ -244,7 +245,7 @@ export function UserFloatingDock({ user }: UserFloatingDockProps) {
         </DockPanelShell>
       )}
 
-      <div className="pointer-events-none fixed bottom-5 right-4 z-[1300] flex items-end gap-3 sm:right-6 lg:bottom-7">
+      <div className="pointer-events-none fixed bottom-5 right-4 z-[1300] hidden items-end gap-3 md:flex lg:bottom-7">
         <nav className="pointer-events-auto flex flex-col gap-2 rounded-full border border-slate-200 bg-white/92 p-2 shadow-2xl shadow-slate-900/10 backdrop-blur-2xl">
           {dockItems.map((item) => {
             const Icon = item.icon;
@@ -299,7 +300,7 @@ function DockPanelShell({
 }) {
   return (
     <div
-      className={`pointer-events-auto fixed z-[1250] w-[min(390px,calc(100vw-24px))] overflow-hidden rounded-lg border border-slate-200 bg-white/96 shadow-2xl shadow-slate-900/15 backdrop-blur-2xl transition-shadow ${
+      className={`pointer-events-auto fixed z-[1250] hidden w-[min(390px,calc(100vw-24px))] overflow-hidden rounded-lg border border-slate-200 bg-white/96 shadow-2xl shadow-slate-900/15 backdrop-blur-2xl transition-shadow md:block ${
         isDragging ? 'shadow-cyan-500/20 ring-2 ring-cyan-300' : ''
       }`}
       style={{ left: position.x, top: position.y }}
