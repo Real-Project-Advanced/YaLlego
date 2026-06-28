@@ -8,3 +8,7 @@ tracking-service.exe
 # Go build cache
 *.test
 *.out
+
+# AI assistant docs — local only, not committed
+CLAUDE.md
+INTEGRATION.md
