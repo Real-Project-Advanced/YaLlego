@@ -60,6 +60,18 @@ func (d *DB) GetDriverWithTransport(userID int) (*models.Driver, *models.Transpo
 	return &driver, &transport, nil
 }
 
+// SaveBusLocation inserts a GPS reading into bus_locations for historical persistence.
+func (d *DB) SaveBusLocation(transportID int, lat float64, lng float64) error {
+	_, err := d.conn.Exec(`
+		INSERT INTO bus_locations (transport_id, lat, lng)
+		VALUES ($1, $2, $3)
+	`, transportID, lat, lng)
+	if err != nil {
+		return fmt.Errorf("saving bus location (transport_id=%d): %w", transportID, err)
+	}
+	return nil
+}
+
 // GetRouteByTransportID returns the most recently created route for the given transport, or nil if none.
 func (d *DB) GetRouteByTransportID(transportID int) (*models.Route, error) {
 	row := d.conn.QueryRow(`

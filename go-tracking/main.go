@@ -7,9 +7,16 @@ import (
 	"github.com/Real-Project-Advanced/YaLlego/go-tracking/internal/config"
 	"github.com/Real-Project-Advanced/YaLlego/go-tracking/internal/db"
 	"github.com/Real-Project-Advanced/YaLlego/go-tracking/internal/ws"
+	"github.com/joho/godotenv"
 )
 
 func main() {
+	// Load environment variables from .env if present; ignore if the file is absent
+	// (in production the env vars are provided directly).
+	if err := godotenv.Load(); err != nil {
+		log.Printf("no .env file loaded: %v", err)
+	}
+
 	cfg := config.Load()
 
 	database, err := db.Connect(cfg.DatabaseURL)
@@ -18,7 +25,7 @@ func main() {
 	}
 	defer database.Close()
 
-	hub := ws.NewHub()
+	hub := ws.NewHub(database)
 	handler := ws.NewHandler(hub, database, cfg.JWTSecret)
 
 	mux := http.NewServeMux()

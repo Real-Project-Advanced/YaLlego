@@ -11,10 +11,11 @@ This is a **Go microservice** that provides real-time bus tracking for **LlegoYa
 ## What This Service Does
 
 1. **Receives GPS coordinates** from drivers via WebSocket
-2. **Stores locations in memory** (not in the database — too many writes)
+2. **Stores locations in memory** — the in-memory store is the source of truth for broadcasting
 3. **Broadcasts locations** in real-time to passengers viewing the map via WebSocket
 4. **Validates JWT tokens** so only authenticated drivers can send locations
 5. **Reads from PostgreSQL** (Supabase) to validate driver/transport/route relationships
+6. **Persists location history** to Supabase (`bus_locations` table), throttled to one insert every 10 seconds per driver to avoid flooding the database
 
 ## Architecture
 
@@ -24,7 +25,7 @@ Driver App (frontend)
     ▼ WebSocket (send GPS coords)
 ┌─────────────────────┐
 │   Go Tracking       │
-│   Service (:8080)   │──── reads from ──── Supabase PostgreSQL
+│   Service (:8080)   │── reads/writes ──── Supabase PostgreSQL
 │                     │
 └─────────────────────┘
     │
@@ -34,59 +35,78 @@ Passenger App (frontend map with Leaflet)
 
 ## Database — Supabase PostgreSQL
 
-The Go service connects READ-ONLY to the existing Supabase PostgreSQL. It does NOT write to the database. Tables:
+The Go service reads from the existing Supabase PostgreSQL for validation (users, drivers, transports, routes) and writes location history to a single dedicated table (`bus_locations`). Tables:
 
 ### users
-| Column          | Type            | Nullable |
-|-----------------|-----------------|----------|
-| id              | integer (PK)    | NO       |
-| fullname        | varchar(255)    | NO       |
-| email           | varchar(255)    | NO       |
-| password        | text            | NO       |
-| phone           | varchar(50)     | YES      |
-| document_number | varchar(100)    | YES      |
-| role            | user_role enum  | NO       |
-| is_active       | boolean         | NO       |
-| created_at      | timestamp       | NO       |
-| updated_at      | timestamp       | NO       |
+
+| Column          | Type           | Nullable |
+| --------------- | -------------- | -------- |
+| id              | integer (PK)   | NO       |
+| fullname        | varchar(255)   | NO       |
+| email           | varchar(255)   | NO       |
+| password        | text           | NO       |
+| phone           | varchar(50)    | YES      |
+| document_number | varchar(100)   | YES      |
+| role            | user_role enum | NO       |
+| is_active       | boolean        | NO       |
+| created_at      | timestamp      | NO       |
+| updated_at      | timestamp      | NO       |
 
 **Enum `user_role`:** `SUPER_ADMIN`, `DRIVER`, `USER`
 
 ### drivers
-| Column             | Type         | Nullable |
-|--------------------|--------------|----------|
-| id                 | integer (PK) | NO       |
-| user_id            | integer (FK → users.id, UNIQUE) | NO |
-| transport_id       | integer (FK → transports.id) | YES |
-| license_type       | varchar(50)  | NO       |
-| experience_years   | integer      | NO       |
-| license_expiration | timestamp    | NO       |
-| created_by         | integer (FK → users.id) | NO |
-| created_at         | timestamp    | NO       |
-| updated_at         | timestamp    | NO       |
+
+| Column             | Type                            | Nullable |
+| ------------------ | ------------------------------- | -------- |
+| id                 | integer (PK)                    | NO       |
+| user_id            | integer (FK → users.id, UNIQUE) | NO       |
+| transport_id       | integer (FK → transports.id)    | YES      |
+| license_type       | varchar(50)                     | NO       |
+| experience_years   | integer                         | NO       |
+| license_expiration | timestamp                       | NO       |
+| created_by         | integer (FK → users.id)         | NO       |
+| created_at         | timestamp                       | NO       |
+| updated_at         | timestamp                       | NO       |
 
 ### transports
-| Column     | Type              | Nullable |
-|------------|-------------------|----------|
-| id         | integer (PK)      | NO       |
-| plate      | varchar(50) UNIQUE| NO       |
-| model      | varchar(100)      | NO       |
-| capacity   | integer           | NO       |
-| is_active  | boolean           | NO       |
-| created_at | timestamp         | NO       |
-| updated_at | timestamp         | NO       |
+
+| Column     | Type               | Nullable |
+| ---------- | ------------------ | -------- |
+| id         | integer (PK)       | NO       |
+| plate      | varchar(50) UNIQUE | NO       |
+| model      | varchar(100)       | NO       |
+| capacity   | integer            | NO       |
+| is_active  | boolean            | NO       |
+| created_at | timestamp          | NO       |
+| updated_at | timestamp          | NO       |
 
 ### routes
-| Column       | Type         | Nullable |
-|--------------|--------------|----------|
-| id           | integer (PK) | NO       |
-| origin       | text         | NO       |
-| destination  | text         | NO       |
-| transport_id | integer (FK → transports.id) | NO |
-| created_at   | timestamp    | NO       |
-| updated_at   | timestamp    | NO       |
+
+| Column       | Type                         | Nullable |
+| ------------ | ---------------------------- | -------- |
+| id           | integer (PK)                 | NO       |
+| origin       | text                         | NO       |
+| destination  | text                         | NO       |
+| transport_id | integer (FK → transports.id) | NO       |
+| created_at   | timestamp                    | NO       |
+| updated_at   | timestamp                    | NO       |
+
+### bus_locations
+
+Historical GPS readings written by this service (the ONLY table it writes to). The in-memory store remains the source of truth for live broadcasting; this table is for persistence/history only.
+
+| Column       | Type                         | Nullable |
+| ------------ | ---------------------------- | -------- |
+| id           | serial (PK)                  | NO       |
+| transport_id | integer (FK → transports.id) | NO       |
+| lat          | float8                       | NO       |
+| lng          | float8                       | NO       |
+| recorded_at  | timestamp (default NOW())    | NO       |
+
+Writes are throttled to one insert every 10 seconds per driver and run asynchronously so they never block broadcasting.
 
 **Key relationships:**
+
 - A driver has ONE user (user_id is UNIQUE)
 - A driver has ONE transport (nullable — may be unassigned)
 - A transport can have MANY drivers and MANY routes
@@ -149,7 +169,7 @@ MongoDB is used ONLY for AI chat logs (`ai_logs` collection in `smartops-medelli
 - **Database driver:** `lib/pq` or `pgx` for PostgreSQL
 - **JWT validation:** `golang-jwt/jwt/v5`
 - **No ORM** — raw SQL queries (the service only reads a few tables)
-- **In-memory store** for bus locations (no need to persist GPS coords)
+- **In-memory store** as the source of truth for live broadcasting; GPS history is also persisted to `bus_locations` (throttled to 1 insert / 10s per driver)
 - **Docker deployment** required by project rules
 
 ## Environment Variables
@@ -195,8 +215,8 @@ go-tracking/
 
 ## What NOT to Do
 
-- Do NOT use an ORM (overkill for read-only queries)
-- Do NOT write GPS locations to the database (use in-memory only)
+- Do NOT use an ORM (raw SQL is enough for the few queries this service runs)
+- Do NOT broadcast from the database — the in-memory store is the source of truth; the `bus_locations` table is for throttled historical persistence only
 - Do NOT interact with MongoDB
 - Do NOT build REST API endpoints for CRUD (the Next.js backend handles that)
 - Do NOT duplicate authentication logic beyond token validation
