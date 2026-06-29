@@ -1,74 +1,74 @@
-# Release Plan
+# Plan de Liberaciones (Release Plan)
 
-## Purpose
+## Propósito
 
-The Release Plan defines how completed Sprint increments are grouped into software releases delivered to us as the stakeholders.
+El Plan de Liberaciones define cómo los incrementos completados en cada Sprint se agrupan en versiones de software que serán entregadas a los interesados (stakeholders).
 
-Each release contains a collection of completed features that provide measurable business value.
-
----
-
-# Release Strategy
-
-The project follows an incremental delivery approach.
-
-Each Sprint produces a potentially shippable increment, while Releases combine multiple Sprints into stable software versions.
+Cada liberación incluye un conjunto de funcionalidades finalizadas que aportan un valor de negocio medible.
 
 ---
 
-# Release Objectives
+# Estrategia de Liberación
 
-## Release 1.0
+El proyecto sigue una estrategia de entrega incremental.
 
-Features
-
-- User Registration
-- Login
-- Role Management
-- Admin Dashboard
-- User Dashboard
-
-Expected Outcome
-
-A functional platform supporting user authentication and role-based access.
+Cada Sprint produce un incremento potencialmente desplegable, mientras que cada liberación agrupa varios Sprints para conformar una versión estable del software.
 
 ---
 
-## Release 1.1
+# Objetivos de las Liberaciones
 
-Features
+## Liberación 1.0
 
-- Driver Dashboard
-- Chat system
-- User profile improvements
+### Funcionalidades
 
-Expected Outcome
+- Registro de usuarios
+- Inicio de sesión
+- Gestión de roles
+- Panel de administración
+- Panel de usuario
 
-Users can manage transportation routes efficiently.
+### Resultado Esperado
 
----
-
-## Release 1.2
-
-Features
-
-- Route creation
-- Route management
-- Favorite routes
-- Notifications
-- Performance improvements
-- Bug fixes
-
-Expected Outcome
-
-Improve communication and overall user experience.
+Una plataforma funcional que permita la autenticación de usuarios y el acceso basado en roles.
 
 ---
 
-# Release Criteria
+## Liberación 1.1
 
-A release may only be deployed when:
+### Funcionalidades
 
-- All Sprint Goals completed.
-- Critical defects resolved.
-- Acceptance testing completed.
+- Panel del conductor
+- Sistema de chat
+- Mejoras en el perfil de usuario
+
+### Resultado Esperado
+
+Los usuarios podrán gestionar las rutas de transporte de manera más eficiente.
+
+---
+
+## Liberación 1.2
+
+### Funcionalidades
+
+- Creación de rutas
+- Gestión de rutas
+- Rutas favoritas
+- Notificaciones
+- Mejoras de rendimiento
+- Corrección de errores
+
+### Resultado Esperado
+
+Mejorar la comunicación y la experiencia general de los usuarios.
+
+---
+
+# Criterios para la Liberación
+
+Una liberación solo podrá ser desplegada cuando se cumplan las siguientes condiciones:
+
+- Se hayan completado todos los objetivos del Sprint.
+- Se hayan corregido todos los defectos críticos.
+- Se hayan completado satisfactoriamente las pruebas de aceptación.
