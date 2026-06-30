@@ -1,69 +1,63 @@
 'use client';
 
 import { ReactNode, useState } from 'react';
-// IMPORTANT: Standard icons from lucide-react replace raw SVGs for cleaner, tailwind-ready customization
+// Form icons.
 import { Check, X, AlertTriangle, Eye, EyeOff, Loader2 } from 'lucide-react';
 
-/* ── VALIDATION HELPERS ────────────────────────── */
-
-// Validates email format using regex
+// Email validation.
 function validateEmail(v: string) {
-  if (!v) return { type: 'error', msg: 'El correo electrónico es requerido.' };
+  if (!v) return { type: 'error', msg: 'El correo es requerido.' };
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v))
-    return { type: 'error', msg: 'Ingresa un correo válido (ej. tu@email.com).' };
-  return { type: 'success', msg: 'El formato del correo es válido.' };
+    return { type: 'error', msg: 'Ingresa un correo valido (ej. tu@email.com).' };
+  return { type: 'success', msg: 'Correo valido.' };
 }
 
-// Validates password strength and gives constructive feedback
-function validatePassword(v: string) {
-  if (!v) return { type: 'error', msg: 'La contraseña es requerida.' };
-  if (v.length < 8) return { type: 'error', msg: `Mínimo 8 caracteres (llevas ${v.length}).` };
-  if (!/[A-Z]/.test(v))
-    return {
-      type: 'warning',
-      msg: 'Tu contraseña funcionará, pero te recomendamos incluir al menos una mayúscula para mayor seguridad.',
-    };
-  if (!/[0-9]/.test(v))
-    return {
-      type: 'warning',
-      msg: 'Tu contraseña es aceptable, pero incluir al menos un número la haría mucho más robusta.',
-    };
-  return { type: 'success', msg: '¡Contraseña excelente y muy segura!' };
+// Login password validation.
+function validateLoginPassword(v: string) {
+  if (!v) return { type: 'error', msg: 'La contrasena es requerida.' };
+  return { type: 'success', msg: 'Contrasena ingresada.' };
 }
 
-// Calculates dynamic password strength score from 0 to 4
+// Password strength.
 function passwordStrength(v: string): { label: string; width: string; color: string } {
-  if (!v || v.length < 4) return { label: '', width: '0%', color: '#e2e8f0' };
   let score = 0;
   if (v.length >= 8) score++;
+  if (/[a-z]/.test(v)) score++;
   if (/[A-Z]/.test(v)) score++;
   if (/[0-9]/.test(v)) score++;
   if (/[^A-Za-z0-9]/.test(v)) score++;
 
-  const map = [
-    { label: 'Muy débil', width: '20%', color: '#ef4444' },
-    { label: 'Débil', width: '40%', color: '#f97316' },
-    { label: 'Regular', width: '60%', color: '#eab308' },
-    { label: 'Fuerte', width: '80%', color: '#22c55e' },
-    { label: 'Muy fuerte', width: '100%', color: '#10b981' },
-  ];
-  return map[score] ?? map[0];
+  if (score <= 2) return { label: 'Baja', width: '33%', color: '#ef4444' };
+  if (score === 3) return { label: 'Media', width: '66%', color: '#eab308' };
+  if (score === 4) return { label: 'Segura', width: '85%', color: '#22c55e' };
+  return { label: 'Super segura', width: '100%', color: '#10b981' };
 }
 
-// Validates name field length
+// Register password validation.
+function validateRegisterPassword(v: string) {
+  if (!v) return { type: 'error', msg: 'La contrasena es requerida.' };
+  if (v.length < 8) return { type: 'error', msg: `Minimo 8 caracteres (llevas ${v.length}).` };
+  if (!/[A-Z]/.test(v)) return { type: 'error', msg: 'Agrega una letra mayuscula.' };
+  if (!/[a-z]/.test(v)) return { type: 'error', msg: 'Agrega una letra minuscula.' };
+  if (!/[0-9]/.test(v)) return { type: 'error', msg: 'Agrega un numero.' };
+
+  const strength = passwordStrength(v);
+  if (strength.label === 'Super segura')
+    return { type: 'success', msg: 'Contrasena super segura.' };
+  return { type: 'success', msg: 'Contrasena segura.' };
+}
+
+// Name validation.
 function validateName(v: string) {
   if (!v) return { type: 'error', msg: 'El nombre es requerido.' };
   if (v.trim().length < 2) return { type: 'error', msg: 'Por favor, ingresa tu nombre completo.' };
-  return { type: 'success', msg: 'Nombre válido.' };
+  return { type: 'success', msg: 'Nombre valido.' };
 }
 
-/* ── STATUS CARD BELOW INPUT ───────────────────── */
-
 function ValidationMsg({ result }: { result: { type: string; msg: string } | null }) {
-  // CRITICAL: Do not render anything if there is no message
   if (!result?.msg) return null;
 
-  // Maps states to specific Tailwind classes and dynamic Lucide components
+  // Status styles.
   const cfg = {
     error: {
       cardCls: 'bg-red-50 border-red-200 text-red-800 ring-red-50',
@@ -83,7 +77,6 @@ function ValidationMsg({ result }: { result: { type: string; msg: string } | nul
   };
 
   return (
-    // Note: text-left enforces proper card layout alignment regardless of parent centering
     <div
       className={`mt-2.5 flex items-start gap-2.5 p-3 rounded-lg border text-left text-xs font-medium shadow-sm transition-all duration-200 animate-in fade-in slide-in-from-top-1 ${cfg.cardCls}`}
     >
@@ -95,8 +88,6 @@ function ValidationMsg({ result }: { result: { type: string; msg: string } | nul
   );
 }
 
-/* ── INPUT FIELD WITH LIVE BORDERS ──────────────── */
-
 export interface FormFieldProps {
   label: string;
   name: string;
@@ -104,7 +95,7 @@ export interface FormFieldProps {
   placeholder?: string;
   required?: boolean;
   autoComplete?: string;
-  validate?: 'email' | 'password' | 'name' | 'none';
+  validate?: 'email' | 'loginPassword' | 'registerPassword' | 'name' | 'none';
 }
 
 export function FormField({
@@ -117,26 +108,27 @@ export function FormField({
   validate = 'none',
 }: FormFieldProps) {
   const [value, setValue] = useState('');
-  const [touched, setTouched] = useState(false); // Tracks if user has clicked out of the input
-  const [showPass, setShowPass] = useState(false); // Controls password visibility toggle
+  const [touched, setTouched] = useState(false);
+  const [showPass, setShowPass] = useState(false);
   const isPassword = type === 'password';
+  const showStrength = validate === 'registerPassword';
 
-  // Computed state: Validates strictly on condition to prevent showing errors on empty, pristine fields
+  // Field status.
   const result = (() => {
     if (!touched || !value) return null;
     if (validate === 'email') return validateEmail(value);
-    if (validate === 'password') return validatePassword(value);
+    if (validate === 'loginPassword') return validateLoginPassword(value);
+    if (validate === 'registerPassword') return validateRegisterPassword(value);
     if (validate === 'name') return validateName(value);
     return null;
   })();
 
-  const strength = isPassword && value ? passwordStrength(value) : null;
+  const strength = showStrength && value ? passwordStrength(value) : null;
 
-  // Global standard inputs style
   const baseInputClass =
     'w-full px-3.5 py-2.5 rounded-lg border text-slate-900 bg-white placeholder-slate-400 focus:outline-none focus:ring-4 transition-all duration-200 text-sm shadow-sm';
 
-  // Changes the input field border and ring color dynamically based on validity state
+  // Border status.
   const statusInputClass = (() => {
     if (!touched || !result) return 'border-slate-300 focus:border-blue-500 focus:ring-blue-500/10';
     if (result.type === 'error')
@@ -149,7 +141,6 @@ export function FormField({
   const inputType = isPassword ? (showPass ? 'text' : 'password') : type;
 
   return (
-    // text-left ensures form contents don't inherit layout alignments like text-center
     <div className="w-full block text-left">
       <label
         className="text-xs font-bold uppercase tracking-wider text-slate-600 block mb-1.5"
@@ -169,8 +160,8 @@ export function FormField({
           required={required}
           value={value}
           onChange={(e) => setValue(e.target.value)}
-          onBlur={() => setTouched(true)} // Sets touched state once user clicks out
-          style={isPassword ? { paddingRight: '2.75rem' } : {}} // Prevents text from going under show/hide button
+          onBlur={() => setTouched(true)}
+          style={isPassword ? { paddingRight: '2.75rem' } : {}}
         />
         {isPassword && (
           <button
@@ -184,7 +175,6 @@ export function FormField({
         )}
       </div>
 
-      {/* Password strength visual meter - only shows for active passwords */}
       {strength && value && (
         <div className="mt-2.5 px-0.5">
           <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
@@ -204,13 +194,10 @@ export function FormField({
         </div>
       )}
 
-      {/* Appends the status notification card directly beneath */}
       <ValidationMsg result={result} />
     </div>
   );
 }
-
-/* ── FORM GLOBAL ALERT CARD ────────────────────── */
 
 export function AlertCard({
   type,
@@ -241,8 +228,6 @@ export function AlertCard({
   );
 }
 
-/* ── BASIC FORM WRAPPER ────────────────────────── */
-
 export interface FormProps {
   children: ReactNode;
   action: (formData: FormData) => Promise<any> | any;
@@ -256,8 +241,6 @@ export function Form({ children, action, className = '' }: FormProps) {
     </form>
   );
 }
-
-/* ── BUTTON COMPONENT WITH LOADING SPINNER ───────── */
 
 export interface FormButtonProps {
   children: ReactNode;
@@ -288,7 +271,6 @@ export function FormButton({
       disabled={loading}
       className={`${baseButtonClass} ${variantClass} ${className}`}
     >
-      {/* Renders a running Lucide spin loader dynamically when state is saving/loading */}
       {loading ? (
         <>
           <Loader2 className="h-4 w-4 animate-spin text-current" />
