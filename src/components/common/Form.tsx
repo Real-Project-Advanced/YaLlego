@@ -1,6 +1,7 @@
 'use client';
 
-import { ReactNode, useState } from 'react';
+import { ReactNode, useActionState, useState } from 'react';
+import { useFormStatus } from 'react-dom';
 // Form icons.
 import { Check, X, AlertTriangle, Eye, EyeOff, Loader2 } from 'lucide-react';
 
@@ -230,13 +231,25 @@ export function AlertCard({
 
 export interface FormProps {
   children: ReactNode;
-  action: (formData: FormData) => Promise<any> | any;
+  action: (formData: FormData) => Promise<FormState> | FormState;
   className?: string;
 }
 
+type FormState = {
+  error?: string;
+  success?: string;
+};
+
 export function Form({ children, action, className = '' }: FormProps) {
+  const [state, formAction] = useActionState(async (_prevState: FormState, formData: FormData) => {
+    const result = await action(formData);
+    return result ?? {};
+  }, {});
+
   return (
-    <form action={action} className={`space-y-5 ${className}`}>
+    <form action={formAction} className={`space-y-5 ${className}`}>
+      {state.error && <AlertCard type="error" title="No pudimos continuar" msg={state.error} />}
+      {state.success && <AlertCard type="success" msg={state.success} />}
       {children}
     </form>
   );
@@ -257,6 +270,8 @@ export function FormButton({
   className = '',
   loading = false,
 }: FormButtonProps) {
+  const { pending } = useFormStatus();
+  const isLoading = loading || pending;
   const baseButtonClass =
     'w-full py-2.5 px-4 rounded-lg font-bold text-sm transition-all duration-200 flex items-center justify-center gap-2 shadow-sm disabled:opacity-60 disabled:cursor-not-allowed';
 
@@ -268,10 +283,10 @@ export function FormButton({
   return (
     <button
       type={type}
-      disabled={loading}
+      disabled={isLoading}
       className={`${baseButtonClass} ${variantClass} ${className}`}
     >
-      {loading ? (
+      {isLoading ? (
         <>
           <Loader2 className="h-4 w-4 animate-spin text-current" />
           <span>Procesando...</span>

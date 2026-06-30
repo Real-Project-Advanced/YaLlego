@@ -15,7 +15,7 @@ export class AuthService {
       if (!user) {
         return {
           success: false,
-          error: ERROR_MESSAGES.USER_NOT_FOUND,
+          error: ERROR_MESSAGES.INVALID_CREDENTIALS,
         };
       }
 
@@ -31,7 +31,7 @@ export class AuthService {
       if (!isValidPassword) {
         return {
           success: false,
-          error: ERROR_MESSAGES.INVALID_PASSWORD,
+          error: ERROR_MESSAGES.INVALID_CREDENTIALS,
         };
       }
 

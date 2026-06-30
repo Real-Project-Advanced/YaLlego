@@ -13,6 +13,7 @@ export const BCRYPT_ROUNDS = 12;
 export const ERROR_MESSAGES = {
   USER_NOT_FOUND: 'Usuario no encontrado',
   INVALID_PASSWORD: 'Contraseña incorrecta',
+  INVALID_CREDENTIALS: 'Correo o contraseña incorrectos',
   USER_INACTIVE: 'Usuario inactivo',
   EMAIL_ALREADY_EXISTS: 'El email ya está registrado',
   UNAUTHORIZED: 'No autorizado',
