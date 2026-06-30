@@ -1,11 +1,11 @@
-// User role types
+// User roles.
 export enum UserRole {
   SUPER_ADMIN = 'SUPER_ADMIN',
   DRIVER = 'DRIVER',
   USER = 'USER',
 }
 
-// Authenticated user
+// Auth user.
 export interface UserPayload {
   id: number;
   email: string;
@@ -13,7 +13,7 @@ export interface UserPayload {
   role: UserRole;
 }
 
-// Database user
+// Database user.
 export interface User {
   id: number;
   fullname: string;
@@ -27,7 +27,7 @@ export interface User {
   updated_at: Date;
 }
 
-// Driver
+// Driver.
 export interface Driver {
   id: number;
   user_id: number;
@@ -40,7 +40,7 @@ export interface Driver {
   updated_at: Date;
 }
 
-// Transporte
+// Transport.
 export interface Transport {
   id: number;
   plate: string;
@@ -51,7 +51,7 @@ export interface Transport {
   updated_at: Date;
 }
 
-// Ruta
+// Route.
 export interface Route {
   id: number;
   origin: string;
@@ -61,7 +61,7 @@ export interface Route {
   updated_at: Date;
 }
 
-// Respuesta de API
+// API response.
 export interface ApiResponse<T> {
   success: boolean;
   data?: T;
@@ -69,7 +69,7 @@ export interface ApiResponse<T> {
   message?: string;
 }
 
-// Resultado de operación
+// Operation result.
 export interface OperationResult<T> {
   success: boolean;
   data?: T;

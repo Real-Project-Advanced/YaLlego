@@ -1,37 +1,36 @@
-import { MongoClient } from 'mongodb'
+import { MongoClient } from 'mongodb';
 
-const uri = process.env.MONGODB_URI || ''
-const options = {}
+const uri = process.env.MONGODB_URI || '';
+const options = {};
 
-let client
-let clientPromise: Promise<MongoClient>
+let client;
+let clientPromise: Promise<MongoClient>;
 
-// Validación estricta de la URI
-const isValidUri =
-  uri.startsWith('mongodb://') || uri.startsWith('mongodb+srv://')
+// Strict URI check.
+const isValidUri = uri.startsWith('mongodb://') || uri.startsWith('mongodb+srv://');
 
 if (!isValidUri) {
   if (uri && uri !== 'your-mongodb-connection-string') {
-    console.warn('⚠️ Invalid MongoDB URI format. AI logging will be disabled.')
+    console.warn('⚠️ Invalid MongoDB URI format. AI logging will be disabled.');
   } else {
-    console.warn('⚠️ MongoDB URI not configured. AI logging will be disabled.')
+    console.warn('⚠️ MongoDB URI not configured. AI logging will be disabled.');
   }
-  clientPromise = Promise.reject('Invalid or missing MongoDB URI')
+  clientPromise = Promise.reject('Invalid or missing MongoDB URI');
 } else {
   if (process.env.NODE_ENV === 'development') {
     const globalWithMongo = global as typeof globalThis & {
-      _mongoClientPromise?: Promise<MongoClient>
-    }
+      _mongoClientPromise?: Promise<MongoClient>;
+    };
 
     if (!globalWithMongo._mongoClientPromise) {
-      client = new MongoClient(uri, options)
-      globalWithMongo._mongoClientPromise = client.connect()
+      client = new MongoClient(uri, options);
+      globalWithMongo._mongoClientPromise = client.connect();
     }
-    clientPromise = globalWithMongo._mongoClientPromise
+    clientPromise = globalWithMongo._mongoClientPromise;
   } else {
-    client = new MongoClient(uri, options)
-    clientPromise = client.connect()
+    client = new MongoClient(uri, options);
+    clientPromise = client.connect();
   }
 }
 
-export default clientPromise
+export default clientPromise;

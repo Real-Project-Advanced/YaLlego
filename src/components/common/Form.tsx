@@ -1,142 +1,94 @@
 'use client';
 
-import { ReactNode, useActionState, useRef, useState, useEffect } from 'react';
+import { ReactNode, useActionState, useState } from 'react';
+import { useFormStatus } from 'react-dom';
+// Form icons.
+import { Check, X, AlertTriangle, Eye, EyeOff, Loader2 } from 'lucide-react';
 
-/* ── Validation helpers ────────────────────────── */
+// Email validation.
 function validateEmail(v: string) {
   if (!v) return { type: 'error', msg: 'El correo es requerido.' };
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v))
-    return { type: 'error', msg: 'Ingresa un correo válido (ej. tu@email.com).' };
-  return { type: 'success', msg: 'Correo válido.' };
+    return { type: 'error', msg: 'Ingresa un correo valido (ej. tu@email.com).' };
+  return { type: 'success', msg: 'Correo valido.' };
 }
 
-function validatePassword(v: string) {
-  if (!v) return { type: 'error', msg: 'La contraseña es requerida.' };
-  if (v.length < 8) return { type: 'error', msg: `Mínimo 8 caracteres (tienes ${v.length}).` };
-  if (!/[A-Z]/.test(v))
-    return { type: 'warning', msg: 'Recomendado: incluye al menos una mayúscula.' };
-  if (!/[0-9]/.test(v)) return { type: 'warning', msg: 'Recomendado: incluye al menos un número.' };
-  return { type: 'success', msg: 'Contraseña segura.' };
+// Login password validation.
+function validateLoginPassword(v: string) {
+  if (!v) return { type: 'error', msg: 'La contrasena es requerida.' };
+  return { type: 'success', msg: 'Contrasena ingresada.' };
 }
 
+// Password strength.
 function passwordStrength(v: string): { label: string; width: string; color: string } {
-  if (!v || v.length < 4) return { label: '', width: '0%', color: '#e2e8f0' };
   let score = 0;
   if (v.length >= 8) score++;
+  if (/[a-z]/.test(v)) score++;
   if (/[A-Z]/.test(v)) score++;
   if (/[0-9]/.test(v)) score++;
   if (/[^A-Za-z0-9]/.test(v)) score++;
-  const map = [
-    { label: 'Muy débil', width: '20%', color: '#ef4444' },
-    { label: 'Débil', width: '40%', color: '#f97316' },
-    { label: 'Regular', width: '60%', color: '#eab308' },
-    { label: 'Fuerte', width: '80%', color: '#22c55e' },
-    { label: 'Muy fuerte', width: '100%', color: '#10b981' },
-  ];
-  return map[score] ?? map[0];
+
+  if (score <= 2) return { label: 'Baja', width: '33%', color: '#ef4444' };
+  if (score === 3) return { label: 'Media', width: '66%', color: '#eab308' };
+  if (score === 4) return { label: 'Segura', width: '85%', color: '#22c55e' };
+  return { label: 'Super segura', width: '100%', color: '#10b981' };
 }
 
+// Register password validation.
+function validateRegisterPassword(v: string) {
+  if (!v) return { type: 'error', msg: 'La contrasena es requerida.' };
+  if (v.length < 8) return { type: 'error', msg: `Minimo 8 caracteres (llevas ${v.length}).` };
+  if (!/[A-Z]/.test(v)) return { type: 'error', msg: 'Agrega una letra mayuscula.' };
+  if (!/[a-z]/.test(v)) return { type: 'error', msg: 'Agrega una letra minuscula.' };
+  if (!/[0-9]/.test(v)) return { type: 'error', msg: 'Agrega un numero.' };
+
+  const strength = passwordStrength(v);
+  if (strength.label === 'Super segura')
+    return { type: 'success', msg: 'Contrasena super segura.' };
+  return { type: 'success', msg: 'Contrasena segura.' };
+}
+
+// Name validation.
 function validateName(v: string) {
   if (!v) return { type: 'error', msg: 'El nombre es requerido.' };
-  if (v.trim().length < 2) return { type: 'error', msg: 'Ingresa tu nombre completo.' };
-  return { type: 'success', msg: '' };
+  if (v.trim().length < 2) return { type: 'error', msg: 'Por favor, ingresa tu nombre completo.' };
+  return { type: 'success', msg: 'Nombre valido.' };
 }
 
-/* ── Icons ─────────────────────────────────────── */
-const IconCheck = () => (
-  <svg
-    width="14"
-    height="14"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="3"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <polyline points="20 6 9 17 4 12" />
-  </svg>
-);
-const IconX = () => (
-  <svg
-    width="14"
-    height="14"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="3"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <line x1="18" y1="6" x2="6" y2="18" />
-    <line x1="6" y1="6" x2="18" y2="18" />
-  </svg>
-);
-const IconWarn = () => (
-  <svg
-    width="14"
-    height="14"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2.5"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
-    <line x1="12" y1="9" x2="12" y2="13" />
-    <line x1="12" y1="17" x2="12.01" y2="17" />
-  </svg>
-);
-const IconEye = ({ open }: { open: boolean }) =>
-  open ? (
-    <svg
-      width="18"
-      height="18"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-      <circle cx="12" cy="12" r="3" />
-    </svg>
-  ) : (
-    <svg
-      width="18"
-      height="18"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" />
-      <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" />
-      <line x1="1" y1="1" x2="23" y2="23" />
-    </svg>
-  );
-
-/* ── ValidationMsg ─────────────────────────────── */
 function ValidationMsg({ result }: { result: { type: string; msg: string } | null }) {
   if (!result?.msg) return null;
+
+  // Status styles.
   const cfg = {
-    error: { cls: 'validation-error', Icon: IconX },
-    success: { cls: 'validation-success', Icon: IconCheck },
-    warning: { cls: 'validation-warning', Icon: IconWarn },
-  }[result.type as 'error' | 'success' | 'warning'] ?? { cls: 'validation-error', Icon: IconX };
+    error: {
+      cardCls: 'bg-red-50 border-red-200 text-red-800 ring-red-50',
+      Icon: X,
+    },
+    success: {
+      cardCls: 'bg-emerald-50 border-emerald-200 text-emerald-800 ring-emerald-50',
+      Icon: Check,
+    },
+    warning: {
+      cardCls: 'bg-amber-50 border-amber-200 text-amber-800 ring-amber-50',
+      Icon: AlertTriangle,
+    },
+  }[result.type as 'error' | 'success' | 'warning'] ?? {
+    cardCls: 'bg-red-50 border-red-200 text-red-800',
+    Icon: X,
+  };
+
   return (
-    <div className={`validation-msg ${cfg.cls}`}>
-      <cfg.Icon />
-      {result.msg}
+    <div
+      className={`mt-2.5 flex items-start gap-2.5 p-3 rounded-lg border text-left text-xs font-medium shadow-sm transition-all duration-200 animate-in fade-in slide-in-from-top-1 ${cfg.cardCls}`}
+    >
+      <span className="mt-0.5 flex-shrink-0 opacity-90">
+        <cfg.Icon className="h-4 w-4 stroke-[2.5]" />
+      </span>
+      <div className="leading-relaxed flex-1">{result.msg}</div>
     </div>
   );
 }
 
-/* ── FormField ─────────────────────────────────── */
 export interface FormFieldProps {
   label: string;
   name: string;
@@ -144,7 +96,7 @@ export interface FormFieldProps {
   placeholder?: string;
   required?: boolean;
   autoComplete?: string;
-  validate?: 'email' | 'password' | 'name' | 'none';
+  validate?: 'email' | 'loginPassword' | 'registerPassword' | 'name' | 'none';
 }
 
 export function FormField({
@@ -160,36 +112,48 @@ export function FormField({
   const [touched, setTouched] = useState(false);
   const [showPass, setShowPass] = useState(false);
   const isPassword = type === 'password';
+  const showStrength = validate === 'registerPassword';
 
+  // Field status.
   const result = (() => {
     if (!touched || !value) return null;
     if (validate === 'email') return validateEmail(value);
-    if (validate === 'password') return validatePassword(value);
+    if (validate === 'loginPassword') return validateLoginPassword(value);
+    if (validate === 'registerPassword') return validateRegisterPassword(value);
     if (validate === 'name') return validateName(value);
     return null;
   })();
 
-  const strength = isPassword && value ? passwordStrength(value) : null;
+  const strength = showStrength && value ? passwordStrength(value) : null;
 
-  const inputClass = [
-    'input-field',
-    touched && result?.type === 'error' ? 'input-error' : '',
-    touched && result?.type === 'success' ? 'input-success' : '',
-  ]
-    .filter(Boolean)
-    .join(' ');
+  const baseInputClass =
+    'w-full px-3.5 py-2.5 rounded-lg border text-slate-900 bg-white placeholder-slate-400 focus:outline-none focus:ring-4 transition-all duration-200 text-sm shadow-sm';
+
+  // Border status.
+  const statusInputClass = (() => {
+    if (!touched || !result) return 'border-slate-300 focus:border-blue-500 focus:ring-blue-500/10';
+    if (result.type === 'error')
+      return 'border-red-400 focus:border-red-500 focus:ring-red-500/10 bg-red-50/10';
+    if (result.type === 'warning')
+      return 'border-amber-400 focus:border-amber-500 focus:ring-amber-500/10 bg-amber-50/10';
+    return 'border-emerald-400 focus:border-emerald-500 focus:ring-emerald-500/10 bg-emerald-50/10';
+  })();
 
   const inputType = isPassword ? (showPass ? 'text' : 'password') : type;
 
   return (
-    <div className="block">
-      <label className="text-sm font-bold text-slate-700" htmlFor={name}>
-        {label}
+    <div className="w-full block text-left">
+      <label
+        className="text-xs font-bold uppercase tracking-wider text-slate-600 block mb-1.5"
+        htmlFor={name}
+      >
+        {label} {required && <span className="text-red-500">*</span>}
       </label>
-      <div className="relative mt-2">
+
+      <div className="relative">
         <input
           id={name}
-          className={inputClass}
+          className={`${baseInputClass} ${statusInputClass}`}
           type={inputType}
           name={name}
           placeholder={placeholder}
@@ -207,31 +171,35 @@ export function FormField({
             className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
             aria-label={showPass ? 'Ocultar contraseña' : 'Mostrar contraseña'}
           >
-            <IconEye open={showPass} />
+            {showPass ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
           </button>
         )}
       </div>
+
       {strength && value && (
-        <div>
-          <div className="strength-bar-track">
+        <div className="mt-2.5 px-0.5">
+          <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
             <div
-              className="strength-bar-fill"
+              className="h-full transition-all duration-300 ease-out"
               style={{ width: strength.width, backgroundColor: strength.color }}
             />
           </div>
           {strength.label && (
-            <p className="mt-1 text-xs font-semibold" style={{ color: strength.color }}>
-              {strength.label}
+            <p
+              className="mt-1 text-[10px] font-bold tracking-wider uppercase"
+              style={{ color: strength.color }}
+            >
+              Seguridad: {strength.label}
             </p>
           )}
         </div>
       )}
+
       <ValidationMsg result={result} />
     </div>
   );
 }
 
-/* ── AlertCard ─────────────────────────────────── */
 export function AlertCard({
   type,
   title,
@@ -242,40 +210,51 @@ export function AlertCard({
   msg: string;
 }) {
   const cfg = {
-    error: { cls: 'alert-error', Icon: IconX, icon_color: '#ef4444' },
-    success: { cls: 'alert-success', Icon: IconCheck, icon_color: '#10b981' },
-    warning: { cls: 'alert-warning', Icon: IconWarn, icon_color: '#f59e0b' },
-    info: { cls: 'alert-info', Icon: IconWarn, icon_color: '#2563eb' },
+    error: { cls: 'bg-red-50 border-red-200 text-red-800', Icon: X },
+    success: { cls: 'bg-emerald-50 border-emerald-200 text-emerald-800', Icon: Check },
+    warning: { cls: 'bg-amber-50 border-amber-200 text-amber-800', Icon: AlertTriangle },
+    info: { cls: 'bg-blue-50 border-blue-200 text-blue-800', Icon: AlertTriangle },
   }[type];
+
   return (
-    <div className={`alert-card ${cfg.cls}`}>
-      <span style={{ color: cfg.icon_color, flexShrink: 0, marginTop: 2 }}>
-        <cfg.Icon />
+    <div className={`p-4 rounded-xl border flex items-start gap-3 shadow-sm text-left ${cfg.cls}`}>
+      <span className="mt-0.5 flex-shrink-0">
+        <cfg.Icon className="h-4 w-4" />
       </span>
       <div>
-        {title && <p className="font-bold text-sm">{title}</p>}
-        <p className="text-sm">{msg}</p>
+        {title && <p className="font-bold text-sm mb-0.5">{title}</p>}
+        <p className="text-sm leading-relaxed">{msg}</p>
       </div>
     </div>
   );
 }
 
-/* ── Form ──────────────────────────────────────── */
 export interface FormProps {
   children: ReactNode;
-  action: (formData: FormData) => Promise<any> | any;
+  action: (formData: FormData) => Promise<FormState> | FormState;
   className?: string;
 }
 
+type FormState = {
+  error?: string;
+  success?: string;
+};
+
 export function Form({ children, action, className = '' }: FormProps) {
+  const [state, formAction] = useActionState(async (_prevState: FormState, formData: FormData) => {
+    const result = await action(formData);
+    return result ?? {};
+  }, {});
+
   return (
-    <form action={action} className={`space-y-5 ${className}`}>
+    <form action={formAction} className={`space-y-5 ${className}`}>
+      {state.error && <AlertCard type="error" title="No pudimos continuar" msg={state.error} />}
+      {state.success && <AlertCard type="success" msg={state.success} />}
       {children}
     </form>
   );
 }
 
-/* ── FormButton ────────────────────────────────── */
 export interface FormButtonProps {
   children: ReactNode;
   type?: 'submit' | 'button' | 'reset';
@@ -291,11 +270,25 @@ export function FormButton({
   className = '',
   loading = false,
 }: FormButtonProps) {
+  const { pending } = useFormStatus();
+  const isLoading = loading || pending;
+  const baseButtonClass =
+    'w-full py-2.5 px-4 rounded-lg font-bold text-sm transition-all duration-200 flex items-center justify-center gap-2 shadow-sm disabled:opacity-60 disabled:cursor-not-allowed';
+
+  const variantClass =
+    variant === 'primary'
+      ? 'bg-blue-600 text-white hover:bg-blue-700 active:scale-[0.99]'
+      : 'bg-slate-100 text-slate-700 hover:bg-slate-200 active:scale-[0.99]';
+
   return (
-    <button type={type} disabled={loading} className={`btn btn-${variant} ${className}`}>
-      {loading ? (
+    <button
+      type={type}
+      disabled={isLoading}
+      className={`${baseButtonClass} ${variantClass} ${className}`}
+    >
+      {isLoading ? (
         <>
-          <span className="spinner" />
+          <Loader2 className="h-4 w-4 animate-spin text-current" />
           <span>Procesando...</span>
         </>
       ) : (

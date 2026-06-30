@@ -1,19 +1,30 @@
 import Link from 'next/link';
 import { Header } from '@/components/common/Header';
+import {
+  IoMapOutline,
+  IoNotificationsOutline,
+  IoSchoolOutline,
+  IoCallOutline,
+  IoMailOutline,
+  IoLogoInstagram,
+  IoLogoGithub,
+  IoLogoWhatsapp,
+  IoWalkOutline,
+} from 'react-icons/io5';
 
 const features = [
   {
-    icon: '🗺️',
+    icon: <IoMapOutline className="text-2xl text-blue-600" />,
     title: 'Comparación de rutas',
     text: 'Analiza alternativas por tiempo, costo estimado y cantidad de transbordos.',
   },
   {
-    icon: '🔔',
+    icon: <IoNotificationsOutline className="text-2xl text-blue-600" />,
     title: 'Alertas en tiempo real',
     text: 'Entérate al instante de congestiones, cierres de estaciones o cambios de servicio.',
   },
   {
-    icon: '🎓',
+    icon: <IoSchoolOutline className="text-2xl text-blue-600" />,
     title: 'Opciones priorizadas',
     text: 'Rutas optimizadas pensando en las necesidades de estudiantes y trabajadores.',
   },
@@ -111,6 +122,7 @@ export default function Home() {
           </div>
         </div>
 
+        {/* PREVIEW CARD */}
         <div className="relative w-full">
           <div
             className="absolute inset-x-8 top-4 h-36 rounded-[48px] blur-2xl opacity-40"
@@ -170,7 +182,10 @@ export default function Home() {
 
               <div className="mt-4 space-y-2">
                 {[
-                  { step: 'Camina 4 min hasta la estación', icon: '🚶' },
+                  {
+                    step: 'Camina 4 min hasta la estación',
+                    icon: <IoWalkOutline className="text-lg text-blue-700" />,
+                  },
                   { step: 'Toma Metro línea A', icon: '🚇' },
                   { step: 'Conecta con bus integrado', icon: '🚌' },
                 ].map(({ step, icon }) => (
@@ -179,7 +194,7 @@ export default function Home() {
                     className="flex items-center gap-3 p-2 rounded-xl hover:bg-slate-50 transition-colors"
                   >
                     <span
-                      className="grid size-8 place-items-center rounded-lg text-sm font-black text-blue-700"
+                      className="grid size-8 place-items-center rounded-lg text-sm font-black"
                       style={{ background: '#eff6ff', flexShrink: 0 }}
                     >
                       {icon}
@@ -193,6 +208,7 @@ export default function Home() {
         </div>
       </section>
 
+      {/* STATS */}
       <section className="border-y border-slate-200 bg-white py-12 px-6">
         <div className="mx-auto w-full max-w-7xl grid grid-cols-3 gap-8 text-center">
           {stats.map((s, i) => (
@@ -204,6 +220,7 @@ export default function Home() {
         </div>
       </section>
 
+      {/* HOW IT WORKS */}
       <section id="como-funciona" className="mx-auto w-full max-w-7xl px-6 py-20">
         <div className="text-left max-w-3xl mb-12">
           <div className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700 ring-1 ring-inset ring-blue-700/10 mb-4">
@@ -236,6 +253,7 @@ export default function Home() {
         </div>
       </section>
 
+      {/* FEATURES */}
       <section id="rutas" className="bg-white border-y border-slate-200 px-6 py-20">
         <div className="mx-auto w-full max-w-7xl">
           <div className="text-left max-w-3xl mb-12">
@@ -257,7 +275,7 @@ export default function Home() {
                 key={i}
                 className="flex flex-col rounded-2xl border border-slate-200 bg-slate-50/50 p-6 shadow-sm transition-all duration-300 hover:-translate-y-1"
               >
-                {/*<span className="text-3xl mb-4 block">{f.icon}</span> */}
+                <div className="mb-4">{f.icon}</div>
                 <h3 className="text-lg font-bold text-slate-900">{f.title}</h3>
                 <p className="mt-2 text-sm leading-relaxed text-slate-600">{f.text}</p>
               </div>
@@ -266,6 +284,7 @@ export default function Home() {
         </div>
       </section>
 
+      {/* FAQS */}
       <section id="faqs" className="mx-auto w-full max-w-7xl px-6 py-20">
         <div className="grid gap-12 lg:grid-cols-[1fr_1.5fr] items-start">
           <div className="text-left">
@@ -298,6 +317,7 @@ export default function Home() {
         </div>
       </section>
 
+      {/* CTA */}
       <section
         className="px-6 py-20"
         style={{ background: 'linear-gradient(135deg, #1e3a8a 0%, #1d4ed8 100%)' }}
@@ -324,6 +344,7 @@ export default function Home() {
         </div>
       </section>
 
+      {/* FOOTER CON REACT-ICONS (ESTILO HEROUI) */}
       <footer className="border-t border-slate-200 bg-white py-12 px-6">
         <div className="mx-auto max-w-7xl">
           <div className="grid gap-8 md:grid-cols-3 pb-8 items-start">
@@ -344,13 +365,13 @@ export default function Home() {
               </h4>
               <div className="space-y-2 text-sm text-slate-600">
                 <p className="flex items-center gap-2">
-                  <span className="text-base">📞</span>
-                  <a href="tel:+573000000000" className="hover:text-blue-700 transition-colors">
-                    +57 300 000 0000
+                  <IoCallOutline className="text-base text-slate-400" />
+                  <a href="tel:+573012510533" className="hover:text-blue-700 transition-colors">
+                    +57 301 2510533
                   </a>
                 </p>
                 <p className="flex items-center gap-2">
-                  <span className="text-base">📧</span>
+                  <IoMailOutline className="text-base text-slate-400" />
                   <a
                     href="mailto:soporte@lleogya.com"
                     className="hover:text-blue-700 transition-colors"
@@ -372,23 +393,23 @@ export default function Home() {
                   rel="noopener noreferrer"
                   className="flex items-center gap-2 hover:text-blue-700 transition-colors"
                 >
-                  <span></span> Instagram
+                  <IoLogoInstagram className="text-base text-slate-500" /> Instagram
                 </a>
                 <a
-                  href="https://github.com"
+                  href="https://github.com/Real-Project-Advanced/YaLlego"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-2 hover:text-blue-700 transition-colors"
                 >
-                  <span></span> GitHub
+                  <IoLogoGithub className="text-base text-slate-500" /> GitHub
                 </a>
                 <a
-                  href="https://wa.me/573000000000"
+                  href="https://wa.me/573012510533"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-2 hover:text-blue-700 transition-colors font-semibold text-emerald-600"
                 >
-                  <span></span> WhatsApp Soporte
+                  <IoLogoWhatsapp className="text-base text-emerald-500" /> WhatsApp Soporte
                 </a>
               </div>
             </div>

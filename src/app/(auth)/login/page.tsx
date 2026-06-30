@@ -12,7 +12,7 @@ export default function LoginPage() {
       footerText="¿No tienes cuenta?"
       footerLink={{ text: 'Regístrate gratis', href: '/register' }}
     >
-      {/* Header Centrado */}
+      {/* Page header. */}
       <div className="mb-8 text-center animate-fade-in-up">
         <h2 className="text-3xl font-black text-slate-900">Iniciar sesión</h2>
         <p className="mt-2 text-sm text-slate-500">
@@ -26,7 +26,7 @@ export default function LoginPage() {
         </p>
       </div>
 
-      {/* Formulario y Campos Centrados */}
+      {/* Login form. */}
       <Form action={loginAction} className="animate-fade-in-up delay-100 space-y-5">
         <div className="text-center">
           <FormField
@@ -48,11 +48,11 @@ export default function LoginPage() {
             placeholder="Ingresa tu contraseña"
             autoComplete="current-password"
             required
-            validate="password"
+            validate="loginPassword"
           />
         </div>
 
-        {/* Opciones de recuperación */}
+        {/* Recovery options. */}
         <div className="flex items-center justify-between text-sm">
           <label className="flex items-center gap-2 cursor-pointer text-slate-600 hover:text-slate-800 transition-colors">
             <input

@@ -3,10 +3,8 @@ import Link from 'next/link';
 export default function UnauthorizedPage() {
   return (
     <div className="relative flex min-h-screen flex-col items-center justify-center bg-white px-6 text-center">
-      {/* Efecto de luz de fondo sutil */}
       <div className="pointer-events-none absolute h-64 w-64 rounded-full bg-red-600/10 blur-[100px]" />
 
-      {/* Nuevo Icono de Advertencia Médica/Seguridad */}
       <div className="relative mb-8 flex h-20 w-20 items-center justify-center rounded-3xl border border-red-600/20 bg-red-600/5 transition-transform hover:scale-105">
         <svg
           className="h-10 w-10 text-red-600"

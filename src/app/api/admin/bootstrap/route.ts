@@ -2,23 +2,10 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { hashPassword } from '@/lib/auth';
 
-/**
- * POST /api/admin/bootstrap
- * Crea el primer SUPER_ADMIN del sistema
- * Solo funciona si no existe ningún SUPER_ADMIN
- *
- * Body:
- * {
- *   "fullname": "string",
- *   "email": "string",
- *   "password": "string (min 8 chars)",
- *   "phone": "string (opcional)",
- *   "document_number": "string (opcional)"
- * }
- */
+// Create the first super admin.
 export async function POST(request: Request) {
   try {
-    // Verificar si ya existe un SUPER_ADMIN
+    // Check super admin.
     const existingAdmin = await prisma.users.findFirst({
       where: { role: 'SUPER_ADMIN' },
     });
@@ -33,11 +20,11 @@ export async function POST(request: Request) {
       );
     }
 
-    // Parsear el body
+    // Parse body.
     const body = await request.json();
     const { fullname, email, password, phone, document_number } = body;
 
-    // Validaciones básicas
+    // Basic validation.
     if (!fullname || !email || !password) {
       return NextResponse.json(
         { error: 'fullname, email y password son requeridos' },
@@ -52,7 +39,7 @@ export async function POST(request: Request) {
       );
     }
 
-    // Verificar si el email ya existe
+    // Check email.
     const emailExists = await prisma.users.findUnique({
       where: { email },
     });
@@ -61,10 +48,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'El email ya está registrado' }, { status: 400 });
     }
 
-    // Hash de la contraseña
+    // Hash password.
     const hashedPassword = await hashPassword(password);
 
-    // Create the SUPER_ADMIN
+    // Create super admin.
     const admin = await prisma.users.create({
       data: {
         fullname,

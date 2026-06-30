@@ -1,72 +1,72 @@
-# Definition of Done (DoD)
+# Definición de Terminado (Definition of Done - DoD)
 
-## Purpose
+## Propósito
 
-The Definition of Done (DoD) establishes the minimum quality criteria that every Product Backlog Item (PBI) must satisfy before it can be considered complete.
+La Definición de Terminado (DoD) establece los criterios mínimos de calidad que debe cumplir cada **Elemento del Product Backlog (PBI)** antes de ser considerado como completado.
 
-The objective is to ensure consistency, maintain software quality, and reduce technical debt by defining a shared understanding of what "finished" means for the entire development team.
-
----
-
-# Objectives
-
-- Ensure every feature meets quality standards.
-- Reduce production defects.
-- Improve code maintainability.
-- Standardize development practices.
-- Guarantee that delivered functionality is deployable.
+Su objetivo es garantizar la consistencia, mantener la calidad del software y reducir la deuda técnica mediante una comprensión compartida de lo que significa que una funcionalidad esté **terminada** para todo el equipo de desarrollo.
 
 ---
 
-# Definition of Done Checklist
+# Objetivos
 
-A task or User Story is considered **Done** only when all the following criteria are satisfied.
-
-## Development
-
-- Source code has been fully implemented.
-- Business requirements have been completed.
-- Coding standards have been followed.
+- Garantizar que cada funcionalidad cumpla con los estándares de calidad.
+- Reducir los defectos en producción.
+- Mejorar la mantenibilidad del código.
+- Estandarizar las prácticas de desarrollo.
+- Asegurar que la funcionalidad entregada esté lista para su despliegue.
 
 ---
 
-## Code Quality
+# Lista de Verificación de la Definición de Terminado
 
-- ESLint reports no errors.
-- TypeScript compilation succeeds.
-- No unused variables or imports.
-- Code follows project conventions.
+Una tarea o Historia de Usuario se considera **Terminada** únicamente cuando se cumplen todos los siguientes criterios.
 
----
+## Desarrollo
 
-## Database
-
-- Required migrations have been created.
-- Prisma schema is updated if necessary.
-- Database relationships are validated.
+- El código fuente ha sido implementado completamente.
+- Los requisitos de negocio han sido cumplidos.
+- Se han seguido los estándares de codificación establecidos.
 
 ---
 
-## Testing
+## Calidad del Código
 
-- Functional tests completed.
-- Existing functionality verified.
-- No Critical or High severity bugs remain.
-- Acceptance Criteria successfully validated.
-
----
-
-## Review
-
-- Pull Request created.
-- Code Review completed.
-- Comments addressed.
-- Approved by at least one team member.
+- ESLint no reporta errores.
+- La compilación de TypeScript se ejecuta correctamente.
+- No existen variables ni importaciones sin utilizar.
+- El código sigue las convenciones definidas para el proyecto.
 
 ---
 
-# Exit Criteria
+## Base de Datos
 
-A User Story is considered complete only when every item in this checklist has been satisfied.
+- Se han creado las migraciones necesarias.
+- El esquema de Prisma ha sido actualizado cuando corresponde.
+- Las relaciones de la base de datos han sido validadas.
 
-Failure to meet any criterion means the task remains **In Progress**.
+---
+
+## Pruebas
+
+- Se han completado las pruebas funcionales.
+- Se ha verificado que la funcionalidad existente no se vea afectada.
+- No existen errores de severidad **Crítica** o **Alta** pendientes.
+- Los criterios de aceptación han sido validados satisfactoriamente.
+
+---
+
+## Revisión
+
+- Se ha creado el Pull Request.
+- Se ha realizado la revisión de código (Code Review).
+- Se han atendido todos los comentarios de la revisión.
+- La implementación ha sido aprobada por al menos un miembro del equipo.
+
+---
+
+# Criterios de Salida
+
+Una Historia de Usuario se considera completada únicamente cuando todos los elementos de esta lista de verificación han sido satisfechos.
+
+Si alguno de los criterios no se cumple, la tarea deberá permanecer en estado **En Progreso**.

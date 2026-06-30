@@ -77,45 +77,39 @@ export async function verifyRefreshToken(token: string): Promise<UserPayload | n
 }
 
 export async function generateToken(payload: UserPayload): Promise<string> {
-  // Mantener compatibilidad con código anterior
+  // Legacy alias.
   return generateAccessToken(payload);
 }
 
 export async function verifyToken(token: string): Promise<UserPayload | null> {
-  // Mantener compatibilidad con código anterior
+  // Legacy alias.
   return verifyAccessToken(token);
 }
 
-/**
- * Save tokens in cookies
- * - Access Token: httpOnly, Secure, 15 minutos
- * - Refresh Token: httpOnly, Secure, 7 días
- */
+// Store auth cookies.
 export async function setAuthCookies(tokens: TokenPair): Promise<void> {
   const cookieStore = await cookies();
 
-  // Access Token - corta duración
+  // Short-lived token.
   cookieStore.set('accessToken', tokens.accessToken, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
-    maxAge: 60 * 15, // 15 minutos
+    maxAge: 60 * 15, // 15 minutes
     path: '/',
   });
 
-  // Refresh Token - larga duración
+  // Long-lived token.
   cookieStore.set('refreshToken', tokens.refreshToken, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
-    maxAge: 60 * 60 * 24 * 7, // 7 días
+    maxAge: 60 * 60 * 24 * 7, // 7 days
     path: '/',
   });
 }
 
-/**
- * Save a single token (compatibility with previous code)
- */
+// Store legacy cookie.
 export async function setAuthCookie(token: string): Promise<void> {
   const cookieStore = await cookies();
   cookieStore.set('auth-token', token, {
@@ -159,9 +153,7 @@ export async function getCurrentUser(): Promise<UserPayload | null> {
   return verifyAccessToken(token);
 }
 
-/**
- * Refrescar tokens usando el refresh token
- */
+// Refresh tokens.
 export async function refreshUserTokens(): Promise<TokenPair | null> {
   const refreshToken = await getRefreshToken();
   if (!refreshToken) return null;
