@@ -1,21 +1,25 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import type { UserRoute } from '../data/user-dashboard.data';
+import type { Parada, SearchRouteResult } from './UserRouteMapShared';
 
 const UserRouteMapClient = dynamic(() => import('./UserRouteMapClient'), {
   ssr: false,
   loading: () => (
     <div className="grid h-full min-h-[360px] place-items-center bg-slate-100 text-sm font-semibold text-slate-500">
-      Cargando mapa de Medellin...
+      Loading Medellin map...
     </div>
   ),
 });
 
 type UserRouteMapProps = {
-  routes: UserRoute[];
+  routes: SearchRouteResult[];
   selectedRouteId: string;
   onSelectRoute: (routeId: string) => void;
+  paradas: Parada[];
+  onToggleFavoriteParada: (parada: Parada) => void;
+  onRouteFromCurrentLocation: (parada: Parada) => void;
+  routingStopId?: string;
 };
 
 export function UserRouteMap(props: UserRouteMapProps) {

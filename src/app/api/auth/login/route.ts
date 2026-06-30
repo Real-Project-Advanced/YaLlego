@@ -1,12 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { authService } from '@/modules/auth/services/auth.service';
 import { setAuthCookies } from '@/lib/auth';
+import { loginSchema } from '@/shared/validators';
 import { z } from 'zod';
-
-const loginSchema = z.object({
-  email: z.string().email('Email inválido'),
-  password: z.string().min(1, 'La contraseña es obligatoria'),
-});
 
 function getPostLoginPath(role: string) {
   if (role === 'SUPER_ADMIN') return '/admin';
@@ -26,7 +22,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (result.data) {
-      // Generar tokens y establecer cookies
+      // Set auth cookies.
       const { generateTokens } = await import('@/lib/auth');
       const tokens = await generateTokens({
         id: result.data.user.id,
@@ -44,7 +40,7 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    return NextResponse.json({ error: 'Error al iniciar sesión' }, { status: 500 });
+    return NextResponse.json({ error: 'Error signing in' }, { status: 500 });
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: error.issues[0].message }, { status: 400 });

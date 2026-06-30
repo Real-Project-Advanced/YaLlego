@@ -20,9 +20,7 @@ function getSafeRedirectPath(value: FormDataEntryValue | null, fallback: string)
   return value;
 }
 
-/**
- * Server Action: Login
- */
+// Login action.
 export async function loginAction(formData: FormData) {
   let redirectPath: string | null = null;
 
@@ -52,19 +50,17 @@ export async function loginAction(formData: FormData) {
       redirectPath = getSafeRedirectPath(formData.get('redirectTo'), fallbackPath);
     }
 
-    if (!redirectPath) return { error: 'Error desconocido' };
+    if (!redirectPath) return { error: 'Unknown error' };
   } catch (error: any) {
     if (error instanceof z.ZodError) return { error: error.issues[0].message };
     console.error('Login action error:', error);
-    return { error: 'Error al iniciar sesión' };
+    return { error: 'Error signing in' };
   }
 
   redirect(redirectPath);
 }
 
-/**
- * Server Action: Register
- */
+// Register action.
 export async function registerAction(formData: FormData) {
   let redirectPath: string | null = null;
 
@@ -94,19 +90,17 @@ export async function registerAction(formData: FormData) {
       redirectPath = getPostLoginPath(result.data.user.role);
     }
 
-    if (!redirectPath) return { error: 'Error desconocido' };
+    if (!redirectPath) return { error: 'Unknown error' };
   } catch (error: any) {
     if (error instanceof z.ZodError) return { error: error.issues[0].message };
     console.error('Register action error:', error);
-    return { error: 'Error al registrar' };
+    return { error: 'Error registering' };
   }
 
   redirect(redirectPath);
 }
 
-/**
- * Server Action: Bootstrap (Initial Super Admin)
- */
+// Bootstrap action.
 export async function bootstrap(formData: FormData) {
   let redirectPath: string | null = null;
 
@@ -137,18 +131,16 @@ export async function bootstrap(formData: FormData) {
       redirectPath = '/admin';
     }
 
-    if (!redirectPath) return { error: 'Error desconocido' };
+    if (!redirectPath) return { error: 'Unknown error' };
   } catch (error: any) {
     console.error('Bootstrap error:', error);
-    return { error: 'Error al crear administrador inicial' };
+    return { error: 'Error creating initial administrator' };
   }
 
   redirect(redirectPath);
 }
 
-/**
- * Server Action: Logout
- */
+// Logout action.
 export async function logoutAction() {
   const { clearAuthCookies } = await import('@/lib/auth');
   await clearAuthCookies();

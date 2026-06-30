@@ -16,8 +16,8 @@ export default function MapView() {
   const buses = useLiveBuses();
 
   return (
-    <div className="flex h-screen w-full">
-      <div className="flex-1">
+    <div className="flex h-screen w-full overflow-hidden">
+      <div className="flex-1 h-full min-h-0">
         <MapContainer
           center={[6.2442, -75.5812]}
           zoom={13}

@@ -2,12 +2,20 @@
   "name": "llegoya",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": ">=22.22.1",
+    "npm": ">=10"
+  },
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev --hostname 0.0.0.0",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
     "format": "prettier --write .",
+    "mobile:build": "CAPACITOR_EXPORT=1 npm run build && npx cap sync",
+    "mobile:sync": "npx cap sync",
+    "mobile:android": "npx cap open android",
+    "mobile:ios": "npx cap open ios",
     "prepare": "husky",
     "db:generate": "npm exec prisma generate",
     "db:push": "npm exec prisma db push"
@@ -22,6 +30,14 @@
     ]
   },
   "dependencies": {
+    "@capacitor/android": "^6.2.1",
+    "@capacitor/cli": "^6.2.1",
+    "@capacitor/core": "^6.2.1",
+    "@capacitor/geolocation": "^6.0.1",
+    "@capacitor/ios": "^6.2.1",
+    "@heroui/react": "^3.2.1",
+    "@heroui/system": "^2.4.28",
+    "@heroui/theme": "^2.4.26",
     "@prisma/adapter-pg": "^7.8.0",
     "@prisma/client": "^7.8.0",
     "@radix-ui/react-dialog": "^1.1.15",
@@ -32,17 +48,19 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "dotenv": "^17.4.2",
+    "framer-motion": "^12.42.0",
     "jose": "^6.2.3",
     "leaflet": "^1.9.4",
-    "lucide-react": "^1.14.0",
+    "lucide-react": "^1.22.0",
     "mongodb": "^7.2.0",
     "next": "16.2.6",
     "pg": "^8.20.0",
     "prisma": "^7.8.0",
     "react": "19.2.4",
     "react-dom": "19.2.4",
+    "react-icons": "^5.6.0",
     "react-leaflet": "^5.0.0",
-    "tailwind-merge": "^3.5.0",
+    "tailwind-merge": "^3.6.0",
     "zod": "^4.4.3"
   },
   "devDependencies": {
