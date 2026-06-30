@@ -58,28 +58,28 @@ export default async function AdminDashboard() {
 
         {/* Options menu */}
         <div className="grid grid-cols-1 gap-5 lg:grid-cols-2 lg:gap-6">
-          {/* Manage users */}
+          {/* Manage vehicles */}
           <div className="rounded-lg bg-white p-5 shadow-md transition hover:shadow-lg sm:p-6">
             <div className="flex items-start justify-between mb-4">
               <div className="min-w-0">
-                <h2 className="text-xl font-bold text-slate-950 mb-2">👥 Manage Users</h2>
+                <h2 className="text-xl font-bold text-slate-950 mb-2">Manage Vehicles</h2>
                 <p className="text-slate-600 text-sm">
-                  Create, edit, and manage system users (SUPER_ADMIN, DRIVER, USER)
+                  Register vehicles, update capacity, and manage status
                 </p>
               </div>
             </div>
             <div className="space-y-2">
               <Link
-                href="/admin/users"
-                className="block w-full text-center bg-blue-600 text-white py-2 rounded-lg font-semibold hover:bg-blue-700 transition text-sm"
+                href="/admin/transports"
+                className="block w-full text-center bg-purple-600 text-white py-2 rounded-lg font-semibold hover:bg-purple-700 transition text-sm"
               >
-                View Users
+                View Vehicles
               </Link>
               <Link
-                href="/admin/users/create"
-                className="block w-full text-center border border-blue-600 text-blue-600 py-2 rounded-lg font-semibold hover:bg-blue-50 transition text-sm"
+                href="/admin/transports/create"
+                className="block w-full text-center border border-purple-600 text-purple-600 py-2 rounded-lg font-semibold hover:bg-purple-50 transition text-sm"
               >
-                Create User
+                Create Vehicle
               </Link>
             </div>
           </div>
@@ -106,32 +106,6 @@ export default async function AdminDashboard() {
                 className="block w-full text-center border border-green-600 text-green-600 py-2 rounded-lg font-semibold hover:bg-green-50 transition text-sm"
               >
                 Register Driver
-              </Link>
-            </div>
-          </div>
-
-          {/* Manage vehicles */}
-          <div className="rounded-lg bg-white p-5 shadow-md transition hover:shadow-lg sm:p-6">
-            <div className="flex items-start justify-between mb-4">
-              <div className="min-w-0">
-                <h2 className="text-xl font-bold text-slate-950 mb-2">🚌 Manage Vehicles</h2>
-                <p className="text-slate-600 text-sm">
-                  Register vehicles, update capacity, and manage status
-                </p>
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Link
-                href="/admin/transports"
-                className="block w-full text-center bg-purple-600 text-white py-2 rounded-lg font-semibold hover:bg-purple-700 transition text-sm"
-              >
-                View Vehicles
-              </Link>
-              <Link
-                href="/admin/transports/create"
-                className="block w-full text-center border border-purple-600 text-purple-600 py-2 rounded-lg font-semibold hover:bg-purple-50 transition text-sm"
-              >
-                Register Vehicle
               </Link>
             </div>
           </div>

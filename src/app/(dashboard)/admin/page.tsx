@@ -1,8 +1,8 @@
+import Link from 'next/link';
+import { redirect } from 'next/navigation';
+import { AdminNavbar } from '@/components/layouts/AdminNavbar';
 import { getCurrentUser } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { redirect } from 'next/navigation';
-import Link from 'next/link';
-import { AdminNavbar } from '@/components/layouts/AdminNavbar';
 
 export default async function AdminPage() {
   const user = await getCurrentUser();
@@ -43,7 +43,6 @@ export default async function AdminPage() {
           </p>
         </div>
 
-        {/* Quick Stats */}
         <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {stats.map((stat) => (
             <div
@@ -56,66 +55,62 @@ export default async function AdminPage() {
           ))}
         </div>
 
-        {/* Options menu */}
         <div className="grid grid-cols-1 gap-5 lg:grid-cols-2 lg:gap-6">
-          {/* Manage users */}
           <div className="rounded-lg bg-white p-5 shadow-md transition hover:shadow-lg sm:p-6">
-            <div className="flex items-start justify-between mb-4">
+            <div className="mb-4 flex items-start justify-between">
               <div className="min-w-0">
-                <h2 className="text-xl font-bold text-slate-950 mb-2">👥 Manage Users</h2>
-                <p className="text-slate-600 text-sm">
-                  Create, edit, and manage system users (SUPER_ADMIN, DRIVER, USER)
+                <h2 className="mb-2 text-xl font-bold text-slate-950">Manage Vehicles</h2>
+                <p className="text-sm text-slate-600">
+                  Register vehicles, update capacity, and manage status
                 </p>
               </div>
             </div>
             <div className="space-y-2">
               <Link
-                href="/admin/users"
-                className="block w-full text-center bg-blue-600 text-white py-2 rounded-lg font-semibold hover:bg-blue-700 transition text-sm"
+                href="/admin/transports"
+                className="block w-full rounded-lg bg-purple-600 py-2 text-center text-sm font-semibold text-white transition hover:bg-purple-700"
               >
-                View Users
+                View Vehicles
               </Link>
               <Link
-                href="/admin/users/create"
-                className="block w-full text-center border border-blue-600 text-blue-600 py-2 rounded-lg font-semibold hover:bg-blue-50 transition text-sm"
+                href="/admin/transports/create"
+                className="block w-full rounded-lg border border-purple-600 py-2 text-center text-sm font-semibold text-purple-600 transition hover:bg-purple-50"
               >
-                Create User
+                Create Vehicle
               </Link>
             </div>
           </div>
 
-          {/* Manage drivers */}
           <div className="rounded-lg bg-white p-5 shadow-md transition hover:shadow-lg sm:p-6">
-            <div className="flex items-start justify-between mb-4">
+            <div className="mb-4 flex items-start justify-between">
               <div className="min-w-0">
-                <h2 className="text-xl font-bold text-slate-950 mb-2">🚗 Manage Drivers</h2>
-                <p className="text-slate-600 text-sm">
+                <h2 className="mb-2 text-xl font-bold text-slate-950">Manage Drivers</h2>
+                <p className="text-sm text-slate-600">
                   Register new drivers, update licenses, and assign vehicles
                 </p>
               </div>
             </div>
             <div className="space-y-2">
               <Link
-                href="/admin/driver"
-                className="block w-full text-center bg-green-600 text-white py-2 rounded-lg font-semibold hover:bg-green-700 transition text-sm"
+                href="/admin/drivers"
+                className="block w-full rounded-lg bg-green-600 py-2 text-center text-sm font-semibold text-white transition hover:bg-green-700"
               >
                 View Drivers
               </Link>
               <Link
-                href="/admin/driver/create"
-                className="block w-full text-center border border-green-600 text-green-600 py-2 rounded-lg font-semibold hover:bg-green-50 transition text-sm"
+                href="/admin/drivers/create"
+                className="block w-full rounded-lg border border-green-600 py-2 text-center text-sm font-semibold text-green-600 transition hover:bg-green-50"
               >
                 Create Driver
               </Link>
             </div>
           </div>
 
-          {/* Manage routes */}
           <div className="rounded-lg bg-white p-5 shadow-md transition hover:shadow-lg sm:p-6">
-            <div className="flex items-start justify-between mb-4">
+            <div className="mb-4 flex items-start justify-between">
               <div className="min-w-0">
-                <h2 className="text-xl font-bold text-slate-950 mb-2">🗺️ Manage Routes</h2>
-                <p className="text-slate-600 text-sm">
+                <h2 className="mb-2 text-xl font-bold text-slate-950">Manage Routes</h2>
+                <p className="text-sm text-slate-600">
                   Create, update, and monitor all system routes
                 </p>
               </div>
@@ -123,25 +118,24 @@ export default async function AdminPage() {
             <div className="space-y-2">
               <Link
                 href="/admin/routes"
-                className="block w-full text-center bg-purple-600 text-white py-2 rounded-lg font-semibold hover:bg-purple-700 transition text-sm"
+                className="block w-full rounded-lg bg-orange-600 py-2 text-center text-sm font-semibold text-white transition hover:bg-orange-700"
               >
                 View Routes
               </Link>
               <Link
                 href="/admin/routes/create"
-                className="block w-full text-center border border-purple-600 text-purple-600 py-2 rounded-lg font-semibold hover:bg-purple-50 transition text-sm"
+                className="block w-full rounded-lg border border-orange-600 py-2 text-center text-sm font-semibold text-orange-600 transition hover:bg-orange-50"
               >
                 Create Route
               </Link>
             </div>
           </div>
 
-          {/* Reports and analytics */}
           <div className="rounded-lg bg-white p-5 shadow-md transition hover:shadow-lg sm:p-6">
-            <div className="flex items-start justify-between mb-4">
+            <div className="mb-4 flex items-start justify-between">
               <div className="min-w-0">
-                <h2 className="text-xl font-bold text-slate-950 mb-2">📊 Reports and Analytics</h2>
-                <p className="text-slate-600 text-sm">
+                <h2 className="mb-2 text-xl font-bold text-slate-950">Reports and Analytics</h2>
+                <p className="text-sm text-slate-600">
                   View system usage reports and route analytics
                 </p>
               </div>
@@ -149,7 +143,7 @@ export default async function AdminPage() {
             <div className="space-y-2">
               <Link
                 href="/admin/reports"
-                className="block w-full text-center bg-orange-600 text-white py-2 rounded-lg font-semibold hover:bg-orange-700 transition text-sm"
+                className="block w-full rounded-lg bg-slate-950 py-2 text-center text-sm font-semibold text-white transition hover:bg-slate-800"
               >
                 View Reports
               </Link>
