@@ -50,7 +50,15 @@ function getPostLoginPath(role: string) {
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  const publicRoutes = ['/', '/login', '/register', '/bootstrap', '/status', '/temp-dashboard', '/unauthorized'];
+  const publicRoutes = [
+    '/',
+    '/login',
+    '/register',
+    '/bootstrap',
+    '/status',
+    '/temp-dashboard',
+    '/unauthorized',
+  ];
   const isPublicRoute = publicRoutes.includes(pathname);
   const isAuthRoute = pathname === '/login' || pathname === '/register';
   const isForceLogin = request.nextUrl.searchParams.get('force') === 'true';

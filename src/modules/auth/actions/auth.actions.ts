@@ -50,11 +50,11 @@ export async function loginAction(formData: FormData) {
       redirectPath = getSafeRedirectPath(formData.get('redirectTo'), fallbackPath);
     }
 
-    if (!redirectPath) return { error: 'Error desconocido' };
+    if (!redirectPath) return { error: 'Unknown error' };
   } catch (error: any) {
     if (error instanceof z.ZodError) return { error: error.issues[0].message };
     console.error('Login action error:', error);
-    return { error: 'Error al iniciar sesión' };
+    return { error: 'Error signing in' };
   }
 
   redirect(redirectPath);
@@ -90,11 +90,11 @@ export async function registerAction(formData: FormData) {
       redirectPath = getPostLoginPath(result.data.user.role);
     }
 
-    if (!redirectPath) return { error: 'Error desconocido' };
+    if (!redirectPath) return { error: 'Unknown error' };
   } catch (error: any) {
     if (error instanceof z.ZodError) return { error: error.issues[0].message };
     console.error('Register action error:', error);
-    return { error: 'Error al registrar' };
+    return { error: 'Error registering' };
   }
 
   redirect(redirectPath);
@@ -131,10 +131,10 @@ export async function bootstrap(formData: FormData) {
       redirectPath = '/admin';
     }
 
-    if (!redirectPath) return { error: 'Error desconocido' };
+    if (!redirectPath) return { error: 'Unknown error' };
   } catch (error: any) {
     console.error('Bootstrap error:', error);
-    return { error: 'Error al crear administrador inicial' };
+    return { error: 'Error creating initial administrator' };
   }
 
   redirect(redirectPath);

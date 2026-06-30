@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    return NextResponse.json({ error: 'Error al iniciar sesión' }, { status: 500 });
+    return NextResponse.json({ error: 'Error signing in' }, { status: 500 });
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: error.issues[0].message }, { status: 400 });

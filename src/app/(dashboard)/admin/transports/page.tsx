@@ -12,7 +12,7 @@ function formatDate(value: Date) {
   }).format(value);
 }
 
-export default async function AdminRoutesPage() {
+export default async function AdminTransportsPage() {
   const user = await getCurrentUser();
 
   if (!user) {
@@ -23,25 +23,30 @@ export default async function AdminRoutesPage() {
     redirect('/');
   }
 
-  const routes = await prisma.routes.findMany({
+  const transports = await prisma.transports.findMany({
     orderBy: { created_at: 'desc' },
     include: {
-      transports: true,
+      _count: {
+        select: {
+          drivers: true,
+          routes: true,
+        },
+      },
     },
   });
 
   return (
     <main className="min-h-screen bg-slate-50">
       <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 sm:py-6">
-        <AdminNavbar title="Rutas" />
+        <AdminNavbar title="Vehiculos" />
 
         <section className="mt-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <h1 className="text-[clamp(2rem,6vw,2.5rem)] font-black leading-tight text-slate-950">
-              Rutas
+              Vehiculos
             </h1>
             <p className="mt-2 text-sm text-slate-600">
-              Trayectos registrados con su vehiculo asignado.
+              Flota registrada para asignar conductores y rutas.
             </p>
           </div>
           <div className="flex flex-col gap-2 sm:flex-row">
@@ -52,43 +57,55 @@ export default async function AdminRoutesPage() {
               Volver
             </Link>
             <Link
-              href="/admin/routes/create"
-              className="inline-flex items-center justify-center rounded-lg bg-orange-600 px-4 py-2 text-sm font-bold text-white shadow-sm transition hover:bg-orange-700"
+              href="/admin/transports/create"
+              className="inline-flex items-center justify-center rounded-lg bg-purple-600 px-4 py-2 text-sm font-bold text-white shadow-sm transition hover:bg-purple-700"
             >
-              Crear ruta
+              Crear vehiculo
             </Link>
           </div>
         </section>
 
         <section className="mt-6 overflow-hidden rounded-lg bg-white shadow ring-1 ring-slate-200">
-          {routes.length === 0 ? (
-            <div className="p-6 text-sm text-slate-600">Todavia no hay rutas registradas.</div>
+          {transports.length === 0 ? (
+            <div className="p-6 text-sm text-slate-600">Todavia no hay vehiculos registrados.</div>
           ) : (
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-slate-200 text-sm">
                 <thead className="bg-slate-100 text-left text-xs font-bold uppercase text-slate-600">
                   <tr>
-                    <th className="px-4 py-3">Ruta</th>
                     <th className="px-4 py-3">Vehiculo</th>
                     <th className="px-4 py-3">Capacidad</th>
-                    <th className="px-4 py-3">Creada</th>
+                    <th className="px-4 py-3">Asignaciones</th>
+                    <th className="px-4 py-3">Estado</th>
+                    <th className="px-4 py-3">Creado</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {routes.map((route) => (
-                    <tr key={route.id} className="align-top">
+                  {transports.map((transport) => (
+                    <tr key={transport.id} className="align-top">
                       <td className="px-4 py-4">
-                        <p className="font-bold text-slate-950">{route.origin}</p>
-                        <p className="text-slate-600">Hasta {route.destination}</p>
+                        <p className="font-bold text-slate-950">{transport.plate}</p>
+                        <p className="text-slate-600">{transport.model}</p>
                       </td>
+                      <td className="px-4 py-4 text-slate-700">{transport.capacity} pasajeros</td>
                       <td className="px-4 py-4 text-slate-700">
-                        <p className="font-semibold">{route.transports.plate}</p>
-                        <p className="text-xs text-slate-500">{route.transports.model}</p>
+                        <p>{transport._count.drivers} conductores</p>
+                        <p className="text-xs text-slate-500">{transport._count.routes} rutas</p>
                       </td>
-                      <td className="px-4 py-4 text-slate-700">
-                        {route.transports.capacity} pasajeros
+                      <td className="px-4 py-4">
+                        <span
+                          className={`inline-flex rounded-full px-2.5 py-1 text-xs font-bold ${
+                            transport.is_active
+                              ? 'bg-emerald-50 text-emerald-700'
+                              : 'bg-slate-100 text-slate-600'
+                          }`}
+                        >
+                          {transport.is_active ? 'Activo' : 'Inactivo'}
+                        </span>
                       </td>
-                      <td className="px-4 py-4 text-slate-600">{formatDate(route.created_at)}</td>
+                      <td className="px-4 py-4 text-slate-600">
+                        {formatDate(transport.created_at)}
+                      </td>
                     </tr>
                   ))}
                 </tbody>

@@ -11,8 +11,8 @@ export async function POST(_request: Request) {
 
     if (!newTokens) {
       return NextResponse.json(
-        { error: 'No hay sesión activa o refresh token inválido' },
-        { status: 401 }
+        { error: 'No active session or invalid refresh token' },
+        { status: 401 },
       );
     }
 
@@ -24,14 +24,11 @@ export async function POST(_request: Request) {
           accessToken: newTokens.accessToken,
         },
       },
-      { status: 200 }
+      { status: 200 },
     );
   } catch (error) {
     console.error('Refresh tokens error:', error);
 
-    return NextResponse.json(
-      { error: 'Error interno del servidor' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 });
   }
 }
