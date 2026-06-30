@@ -8,6 +8,7 @@ import { useSearchParams } from 'next/navigation';
 import {
   ArrowUpDown,
   Bot,
+  BusFront,
   Clock3,
   Eye,
   Gauge,
@@ -25,13 +26,18 @@ import {
   UserRound,
 } from 'lucide-react';
 import type { UserPayload } from '@/lib/auth';
+import { supabase } from '@/lib/supabase';
 import { BottomSheet } from './BottomSheet';
 import { FabMenu, type FabMenuItem } from './FabMenu';
 import { UserChatbotPanel } from './UserChatbotPanel';
 import { UserRouteMap } from './UserRouteMap';
+import { useDriverLocations, type DriverLocation } from '../hooks/useDriverLocations';
+import { useRideRequestStatus } from '../hooks/useRideRequestStatus';
+import { useSendRideRequest } from '../hooks/useSendRideRequest';
 import {
   getStopLogoOption,
   stopLogoOptions,
+  type ActiveDriverLocation,
   type Parada,
   type SearchRouteResult,
   type StopLogoId,
@@ -66,6 +72,8 @@ const medellinViewbox = '-75.7000,6.3600,-75.4800,6.1500';
 
 const favoriteStorageKey = 'yallego.favoritePlaces';
 const publicStopsStorageKey = 'yallego.publicStops';
+const favoriteRoutesStorageKey = 'yallego.favoriteRoutes';
+const routeSearchStorageKey = (userId: string | number) => `yallego.routeSearch.${userId}`;
 
 const mobileRouteItems: FabMenuItem<MobileSheetKey>[] = [
   { key: 'search', label: 'Buscar', icon: Eye },
@@ -91,6 +99,12 @@ type StoredStop = Partial<Parada> & {
   logoText?: string;
 };
 
+type FavoriteRoute = SearchRouteResult & {
+  driverCode?: string;
+  routeName?: string;
+  savedAt: string;
+};
+
 const normalizeStoredStop = (item: StoredStop): Parada | null => {
   const latitud = item.latitud ?? item.lat;
   const longitud = item.longitud ?? item.lng;
@@ -112,6 +126,19 @@ const normalizeStoredStop = (item: StoredStop): Parada | null => {
     esFavorito: item.esFavorito ?? true,
     informacionAdicional: item.informacionAdicional ?? item.category,
   };
+};
+
+const readStoredFavoriteRoutes = () => {
+  if (typeof window === 'undefined') return [];
+
+  const stored = window.localStorage.getItem(favoriteRoutesStorageKey);
+  if (!stored) return [];
+
+  try {
+    return JSON.parse(stored) as FavoriteRoute[];
+  } catch {
+    return [];
+  }
 };
 
 const readStoredFavorites = () => {
@@ -147,6 +174,20 @@ const formatDistance = (distanceKm: number) =>
 
 const formatDuration = (durationMinutes: number) =>
   new Intl.NumberFormat('es-CO', { maximumFractionDigits: 0 }).format(durationMinutes);
+
+const distanceInKm = (a: { lat: number; lng: number }, b: { lat: number; lng: number }) => {
+  const radiusKm = 6371;
+  const toRad = (value: number) => (value * Math.PI) / 180;
+  const dLat = toRad(b.lat - a.lat);
+  const dLng = toRad(b.lng - a.lng);
+  const lat1 = toRad(a.lat);
+  const lat2 = toRad(b.lat);
+  const h =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) * Math.sin(dLng / 2);
+
+  return radiusKm * 2 * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h));
+};
 
 async function getCurrentCoordinates() {
   if (Capacitor.isNativePlatform()) {
@@ -211,11 +252,13 @@ const buildPlaceQueries = (value: string) => {
   const normalized = normalizeAddressQuery(value);
   const rawValue = value.trim();
   const baseValue = normalized || rawValue;
+  const hasMedellin =
+    baseValue.toLowerCase().includes('medellin') || baseValue.toLowerCase().includes('medellín');
   const queries = [
-    baseValue,
-    `${baseValue}, Medellin, Antioquia, Colombia`,
-    `${baseValue}, Medellin, Colombia`,
-    `${rawValue}, Medellin, Antioquia, Colombia`,
+    hasMedellin ? baseValue : `${baseValue}, Medellín, Antioquia, Colombia`,
+    rawValue.toLowerCase().includes('medellin') || rawValue.toLowerCase().includes('medellín')
+      ? rawValue
+      : `${rawValue}, Medellín, Antioquia, Colombia`,
   ];
 
   return Array.from(new Set(queries.filter(Boolean)));
@@ -234,28 +277,42 @@ async function geocodePlace(value: string): Promise<GeocodedPlace> {
     const params = new URLSearchParams({
       format: 'jsonv2',
       q: query,
-      limit: '6',
-      addressdetails: '1',
+      limit: '5',
       countrycodes: 'co',
       viewbox: medellinViewbox,
+      bounded: '1',
+      addressdetails: '1',
     });
 
-    const response = await fetch(`https://nominatim.openstreetmap.org/search?${params.toString()}`);
+    const response = await fetch(
+      `https://nominatim.openstreetmap.org/search?${params.toString()}`,
+      {
+        headers: {
+          'Accept-Language': 'es',
+          'User-Agent': 'YaLlego/1.0',
+        },
+      },
+    );
     if (!response.ok) throw new Error('No pude consultar el origen o destino.');
 
     results = (await response.json()) as NominatimPlace[];
     if (results.length > 0) break;
   }
 
-  const place =
-    results.find((result) => /medell[ií]n/i.test(result.display_name)) ??
-    results.find(isMedellinAreaPlace) ??
-    results[0];
+  const medellinResults = results.filter(
+    (result) =>
+      result.display_name.toLowerCase().includes('medellín') ||
+      result.display_name.toLowerCase().includes('medellin') ||
+      result.display_name.toLowerCase().includes('antioquia') ||
+      isMedellinAreaPlace(result),
+  );
 
-  if (!place) throw new Error(`No encontre "${value}" en Medellin. Prueba sin interior o apto.`);
+  const place = medellinResults[0] ?? results[0];
+
+  if (!place) throw new Error(`No encontre "${value}" dentro de Medellin.`);
 
   return {
-    name: buildReadableAddress(place),
+    name: place.display_name.split(',').slice(0, 3).join(', '),
     lat: Number(place.lat),
     lng: Number(place.lon),
   };
@@ -386,6 +443,10 @@ export function UserRouteSearch({ user, visiblePanels, onTogglePanel }: UserRout
   const [error, setError] = useState('');
   const [routes, setRoutes] = useState<SearchRouteResult[]>([]);
   const [selectedRouteId, setSelectedRouteId] = useState('');
+  const [selectedDriver, setSelectedDriver] = useState<ActiveDriverLocation | null>(null);
+  const [favoriteRoutes, setFavoriteRoutes] = useState<FavoriteRoute[]>([]);
+  const [requestStatus, setRequestStatus] = useState('');
+  const [currentRideRequestId, setCurrentRideRequestId] = useState<string | null>(null);
   const [paradas, setParadas] = useState<Parada[]>([]);
   const [newStop, setNewStop] = useState({
     titulo: '',
@@ -411,10 +472,53 @@ export function UserRouteSearch({ user, visiblePanels, onTogglePanel }: UserRout
   const routedFavoriteIdRef = useRef('');
   const searchParams = useSearchParams();
   const favoriteToRouteId = searchParams.get('favorite');
+  const favoriteRouteName = searchParams.get('favoriteRoute');
+  const driverLocations = useDriverLocations();
+  const sendRideRequest = useSendRideRequest();
+  const rideRequestStatus = useRideRequestStatus(currentRideRequestId);
 
   const favoriteStops = useMemo(() => paradas.filter((parada) => parada.esFavorito), [paradas]);
   const selectedRoute = routes.find((route) => route.id === selectedRouteId) ?? routes[0];
+  const nearbyDrivers = useMemo(() => {
+    if (!selectedRoute) return driverLocations.drivers;
 
+    return [...driverLocations.drivers]
+      .filter((driver) => !favoriteRouteName || driver.routeName === favoriteRouteName)
+      .map((driver) => ({
+        ...driver,
+        distanceFromOrigin: distanceInKm(selectedRoute.startPoint, {
+          lat: driver.lat,
+          lng: driver.lng,
+        }),
+      }))
+      .filter((driver) => driver.distanceFromOrigin <= 18)
+      .sort((a, b) => a.distanceFromOrigin - b.distanceFromOrigin)
+      .map(({ distanceFromOrigin: _distanceFromOrigin, ...driver }) => ({
+        ...driver,
+        isHighlighted: true,
+      }));
+  }, [driverLocations.drivers, favoriteRouteName, selectedRoute]);
+  const routeStopsNearDriverRoute = useMemo(() => {
+    if (!selectedRoute || !selectedDriver) return [];
+
+    return paradas.filter((parada) => {
+      const point = { lat: parada.latitud, lng: parada.longitud };
+      return selectedRoute.coordinates.some(
+        ([lat, lng]) => distanceInKm(point, { lat, lng }) <= 0.8,
+      );
+    });
+  }, [paradas, selectedDriver, selectedRoute]);
+  const nearestStopToOrigin = useMemo(() => {
+    if (!selectedRoute || routeStopsNearDriverRoute.length === 0) return null;
+
+    return [...routeStopsNearDriverRoute].sort(
+      (a, b) =>
+        distanceInKm(selectedRoute.startPoint, { lat: a.latitud, lng: a.longitud }) -
+        distanceInKm(selectedRoute.startPoint, { lat: b.latitud, lng: b.longitud }),
+    )[0];
+  }, [routeStopsNearDriverRoute, selectedRoute]);
+  const selectedDriverDuration = selectedDriver?.estimatedDuration ?? selectedRoute?.duration ?? 0;
+  const selectedDriverDistance = selectedDriver?.totalDistance ?? selectedRoute?.distance ?? 0;
   const handlePanelDragStart = (panel: FloatingPanelKey, event: PointerEvent<HTMLElement>) => {
     setDraggedPanel(panel);
     event.currentTarget.setPointerCapture(event.pointerId);
@@ -443,10 +547,56 @@ export function UserRouteSearch({ user, visiblePanels, onTogglePanel }: UserRout
   useEffect(() => {
     const loadTimer = window.setTimeout(() => {
       setParadas(mergeParadas(readStoredPublicStops(), readStoredFavorites()));
+      setFavoriteRoutes(readStoredFavoriteRoutes());
+
+      try {
+        const storedSearch = window.localStorage.getItem(routeSearchStorageKey(user.id));
+        if (!storedSearch) return;
+
+        const parsed = JSON.parse(storedSearch) as {
+          origin?: string;
+          destination?: string;
+          currentOriginPlace?: GeocodedPlace | null;
+          routes?: SearchRouteResult[];
+          selectedRouteId?: string;
+          currentRideRequestId?: string | null;
+        };
+
+        setOrigin(parsed.origin ?? '');
+        setDestination(parsed.destination ?? '');
+        setCurrentOriginPlace(parsed.currentOriginPlace ?? null);
+        setRoutes(parsed.routes ?? []);
+        setSelectedRouteId(parsed.selectedRouteId ?? parsed.routes?.[0]?.id ?? '');
+        setCurrentRideRequestId(parsed.currentRideRequestId ?? null);
+      } catch {
+        window.localStorage.removeItem(routeSearchStorageKey(user.id));
+      }
     }, 0);
 
     return () => window.clearTimeout(loadTimer);
-  }, []);
+  }, [user.id]);
+
+  useEffect(() => {
+    window.localStorage.setItem(
+      routeSearchStorageKey(user.id),
+      JSON.stringify({
+        origin,
+        destination,
+        currentOriginPlace,
+        routes,
+        selectedRouteId,
+        currentRideRequestId,
+      }),
+    );
+  }, [
+    currentOriginPlace,
+    currentRideRequestId,
+    destination,
+    origin,
+    routes,
+    selectedRouteId,
+    user.id,
+  ]);
 
   useEffect(() => {
     const desktopQuery = window.matchMedia('(min-width: 769px)');
@@ -549,6 +699,102 @@ export function UserRouteSearch({ user, visiblePanels, onTogglePanel }: UserRout
     window.localStorage.setItem(favoriteStorageKey, JSON.stringify(nextFavoriteStops));
     savePublicStops(nextPublicStops);
     window.dispatchEvent(new CustomEvent('yallego:favorites-updated'));
+  };
+
+  useEffect(() => {
+    const status = rideRequestStatus.request?.status;
+
+    if (status !== 'completed') return;
+
+    const completeTimer = window.setTimeout(() => {
+      setRequestStatus('');
+      setCurrentRideRequestId(null);
+    }, 0);
+
+    return () => window.clearTimeout(completeTimer);
+  }, [rideRequestStatus.request?.status]);
+
+  const saveFavoriteRoute = async (driver = selectedDriver) => {
+    if (!selectedRoute) return;
+
+    const favoriteRoute: FavoriteRoute = {
+      ...selectedRoute,
+      driverCode: driver?.driverCode,
+      routeName: driver?.routeName,
+      savedAt: new Date().toISOString(),
+    };
+    const nextFavoriteRoutes = [
+      favoriteRoute,
+      ...favoriteRoutes.filter(
+        (route) =>
+          route.startPoint.name !== selectedRoute.startPoint.name ||
+          route.endPoint.name !== selectedRoute.endPoint.name ||
+          route.driverCode !== driver?.driverCode,
+      ),
+    ].slice(0, 20);
+
+    setFavoriteRoutes(nextFavoriteRoutes);
+    window.localStorage.setItem(favoriteRoutesStorageKey, JSON.stringify(nextFavoriteRoutes));
+    window.dispatchEvent(new CustomEvent('yallego:favorite-routes-updated'));
+
+    if (driver) {
+      await supabase.from('user_favorite_routes').insert({
+        user_id: String(user.id),
+        route_name: driver.routeName,
+        driver_code: driver.driverCode,
+        price: 3800,
+        created_at: new Date().toISOString(),
+      });
+    }
+  };
+
+  const selectNearbyDriver = (driver: ActiveDriverLocation) => {
+    setSelectedDriver(driver);
+    setRequestStatus('');
+    setCurrentRideRequestId(null);
+    setSelectedRouteId(selectedRoute?.id ?? routes[0]?.id ?? '');
+  };
+
+  const requestSelectedBus = async (driver = selectedDriver) => {
+    if (!selectedRoute || !driver) {
+      setRequestStatus('Primero elige un bus cercano.');
+      return;
+    }
+
+    const requestId = await sendRideRequest.sendRideRequest({
+      driver,
+      nearestStop: nearestStopToOrigin,
+      route: selectedRoute,
+      user,
+    });
+
+    if (requestId) {
+      setSelectedDriver(driver);
+      setCurrentRideRequestId(requestId);
+    }
+
+    setRequestStatus(
+      requestId
+        ? `Solicitud enviada a ${driver.driverCode}. Espera la respuesta del conductor.`
+        : sendRideRequest.error || 'No pude enviar la solicitud.',
+    );
+  };
+
+  const toActiveDriverLocation = (driver: DriverLocation): ActiveDriverLocation => ({
+    driverCode: driver.driver_code,
+    driverId: Number(driver.driver_id) || null,
+    routeName: driver.route_name,
+    lat: driver.lat,
+    lng: driver.lng,
+    price: 3800,
+  });
+
+  const handleSendRideRequest = async (driver: DriverLocation) => {
+    await requestSelectedBus(toActiveDriverLocation(driver));
+  };
+
+  const handleSaveFavorite = async (driver: DriverLocation) => {
+    await saveFavoriteRoute(toActiveDriverLocation(driver));
   };
 
   const getCurrentLocationPlace = useCallback(async () => {
@@ -690,9 +936,12 @@ export function UserRouteSearch({ user, visiblePanels, onTogglePanel }: UserRout
 
       setRoutes([nextRoute]);
       setSelectedRouteId(nextRoute.id);
+      setSelectedDriver(null);
+      setRequestStatus('');
     } catch (searchError) {
       setRoutes([]);
       setSelectedRouteId('');
+      setSelectedDriver(null);
       setError(searchError instanceof Error ? searchError.message : 'No pude buscar esa ruta.');
     } finally {
       setIsSearching(false);
@@ -714,6 +963,12 @@ export function UserRouteSearch({ user, visiblePanels, onTogglePanel }: UserRout
 
   const mobileSheetTitle =
     mobileRouteItems.find((item) => item.key === activeMobileSheet)?.label ?? 'YaLlego';
+  const displayRequestStatus =
+    rideRequestStatus.request?.status === 'accepted'
+      ? 'Tu bus viene 🚌'
+      : rideRequestStatus.request?.status === 'rejected'
+        ? 'Bus no disponible'
+        : requestStatus;
 
   return (
     <section
@@ -728,7 +983,18 @@ export function UserRouteSearch({ user, visiblePanels, onTogglePanel }: UserRout
           paradas={paradas}
           onToggleFavoriteParada={toggleFavoriteParada}
           onRouteFromCurrentLocation={routeFromCurrentLocationToStop}
+          activeDrivers={nearbyDrivers}
+          onSelectDriver={selectNearbyDriver}
+          onRequestDriver={(driver) => void requestSelectedBus(driver)}
+          onFavoriteDriverRoute={(driver) => void saveFavoriteRoute(driver)}
+          driverLocations={driverLocations.driverLocations}
+          onSendRideRequest={(driver) => void handleSendRideRequest(driver)}
+          onSaveFavorite={(driver) => void handleSaveFavorite(driver)}
+          requestedDriverCode={currentRideRequestId ? selectedDriver?.driverCode : undefined}
+          isSendingRequest={sendRideRequest.isSending}
           routingStopId={routingStopId}
+          selectedDriverCode={selectedDriver?.driverCode}
+          showRouteLines={routes.length > 0}
         />
       </div>
 
@@ -757,6 +1023,12 @@ export function UserRouteSearch({ user, visiblePanels, onTogglePanel }: UserRout
               </h2>
             </div>
           </div>
+
+          {driverLocations.error && (
+            <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs font-bold text-amber-800">
+              {driverLocations.error}
+            </p>
+          )}
 
           <form onSubmit={handleSearch} className="mt-4">
             <div className="grid grid-cols-[1fr_auto] gap-3">
@@ -926,6 +1198,86 @@ export function UserRouteSearch({ user, visiblePanels, onTogglePanel }: UserRout
                 <Route size={18} className="mt-0.5 shrink-0 text-emerald-700" />
                 <span>{selectedRoute.endPoint.name}</span>
               </div>
+              <div className="rounded-lg border border-slate-200 bg-white p-3">
+                <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-500">
+                  Bus cercano
+                </p>
+                <p className="mt-2 text-sm font-black text-slate-950">
+                  {selectedDriver
+                    ? `${selectedDriver.driverCode} - ${selectedDriver.routeName}`
+                    : nearbyDrivers.length > 0
+                      ? 'Toca un bus en el mapa'
+                      : 'No hay buses activos cerca'}
+                </p>
+                {nearestStopToOrigin && (
+                  <p className="mt-1 text-xs font-bold text-slate-500">
+                    Parada: {nearestStopToOrigin.titulo}
+                  </p>
+                )}
+                <span
+                  className={`mt-3 inline-flex rounded-full px-3 py-1 text-[11px] font-black ${
+                    selectedDriver
+                      ? 'bg-emerald-50 text-emerald-700'
+                      : 'bg-slate-100 text-slate-500'
+                  }`}
+                >
+                  {selectedDriver ? 'En ruta' : 'Fuera de servicio'}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => void requestSelectedBus()}
+                  disabled={
+                    !selectedDriver || sendRideRequest.isSending || Boolean(currentRideRequestId)
+                  }
+                  className="mt-3 flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-slate-950 text-sm font-black text-white transition hover:bg-cyan-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+                >
+                  <BusFront size={17} />
+                  {currentRideRequestId
+                    ? 'Solicitud enviada ✓'
+                    : sendRideRequest.isSending
+                      ? 'Enviando'
+                      : 'Solicitar bus'}
+                </button>
+                {displayRequestStatus && (
+                  <p className="mt-3 rounded-lg bg-slate-50 p-3 text-xs font-bold leading-5 text-slate-600">
+                    {displayRequestStatus}
+                  </p>
+                )}
+                {rideRequestStatus.request?.status === 'accepted' && (
+                  <div className="mt-3 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-xs font-bold leading-5 text-emerald-800">
+                    <p className="text-sm font-black">Tu bus viene 🚌</p>
+                    <p className="mt-1">
+                      Espera en{' '}
+                      {rideRequestStatus.request.stop_name ??
+                        rideRequestStatus.request.nearest_stop ??
+                        nearestStopToOrigin?.titulo ??
+                        'la parada mas cercana'}
+                      .
+                    </p>
+                    <p className="mt-1">ETA: ~{formatDuration(selectedDriverDuration || 8)} min</p>
+                    <button
+                      type="button"
+                      onClick={() => void rideRequestStatus.completeRequest()}
+                      className="mt-3 h-10 w-full rounded-lg bg-emerald-600 text-xs font-black text-white"
+                    >
+                      Ya subi al bus
+                    </button>
+                  </div>
+                )}
+                {rideRequestStatus.request?.status === 'rejected' && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCurrentRideRequestId(null);
+                      setRequestStatus('');
+                      setSelectedDriver(null);
+                    }}
+                    className="mt-3 h-10 w-full rounded-lg border border-slate-200 bg-white text-xs font-black text-slate-800"
+                  >
+                    Buscar otro bus
+                  </button>
+                )}
+              </div>
             </div>
           ) : (
             <div className="mt-4 rounded-lg border border-dashed border-slate-300 bg-slate-50 p-4 text-sm font-semibold leading-6 text-slate-500">
@@ -956,15 +1308,20 @@ export function UserRouteSearch({ user, visiblePanels, onTogglePanel }: UserRout
             {[
               {
                 label: 'Distancia',
-                value: selectedRoute ? `${formatDistance(selectedRoute.distance)} km` : '0 km',
+                value: selectedRoute ? `${formatDistance(selectedDriverDistance)} km` : '0 km',
                 icon: Gauge,
               },
               {
                 label: 'Duracion',
-                value: selectedRoute ? `${formatDuration(selectedRoute.duration)} min` : '0 min',
+                value: selectedRoute ? `${formatDuration(selectedDriverDuration)} min` : '0 min',
                 icon: Clock3,
               },
-              { label: 'Paradas', value: `${paradas.length}`, icon: Sparkles },
+              {
+                label: 'Paradas',
+                value: `${routeStopsNearDriverRoute.length || paradas.length}`,
+                icon: Sparkles,
+              },
+              { label: 'Precio', value: '$3.800', icon: BusFront },
             ].map((metric) => {
               const Icon = metric.icon;
 
@@ -1120,6 +1477,35 @@ export function UserRouteSearch({ user, visiblePanels, onTogglePanel }: UserRout
               ))
             )}
           </div>
+
+          {selectedRoute && (
+            <div className="mt-5 rounded-lg bg-slate-50 p-3">
+              <p className="text-xs font-black uppercase tracking-[0.2em] text-slate-500">
+                Paradas de tu ruta
+              </p>
+              <div className="mt-3 space-y-2">
+                {routeStopsNearDriverRoute.length === 0 ? (
+                  <p className="text-sm font-semibold text-slate-500">
+                    Toca un bus para ver las paradas que coinciden con su ruta.
+                  </p>
+                ) : (
+                  routeStopsNearDriverRoute.map((parada) => (
+                    <div
+                      key={parada.id}
+                      className="flex items-center gap-3 rounded-lg bg-white p-2"
+                    >
+                      <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-slate-950 text-white">
+                        🚌
+                      </span>
+                      <p className="min-w-0 truncate text-sm font-black text-slate-700">
+                        {parada.titulo}
+                      </p>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          )}
 
           {selectedRoute && (
             <div className="mt-5 rounded-lg bg-slate-50 p-3">

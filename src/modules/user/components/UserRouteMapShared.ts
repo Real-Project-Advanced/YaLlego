@@ -59,6 +59,18 @@ export type Parada = {
   informacionAdicional?: string;
 };
 
+export type ActiveDriverLocation = {
+  driverId?: number | null;
+  driverCode: string;
+  routeName: string;
+  lat: number;
+  lng: number;
+  estimatedDuration?: number | null;
+  totalDistance?: number | null;
+  price?: number | null;
+  isHighlighted?: boolean;
+};
+
 export const stopLogoOptions: Array<{
   id: StopLogoId;
   label: string;

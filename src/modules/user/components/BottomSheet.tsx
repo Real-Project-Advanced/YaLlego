@@ -7,10 +7,17 @@ type BottomSheetProps = {
   open: boolean;
   title: string;
   onClose: () => void;
+  hideCloseButton?: boolean;
   children: ReactNode;
 };
 
-export function BottomSheet({ open, title, onClose, children }: BottomSheetProps) {
+export function BottomSheet({
+  open,
+  title,
+  onClose,
+  hideCloseButton = false,
+  children,
+}: BottomSheetProps) {
   const [touchStartY, setTouchStartY] = useState<number | null>(null);
   const [dragY, setDragY] = useState(0);
 
@@ -50,7 +57,7 @@ export function BottomSheet({ open, title, onClose, children }: BottomSheetProps
         <button
           type="button"
           onClick={onClose}
-          className="mx-auto block h-7 w-24 rounded-full"
+          className={hideCloseButton ? 'hidden' : 'mx-auto block h-7 w-24 rounded-full'}
           aria-label={`Cerrar ${title}`}
         >
           <span className="mx-auto block h-1.5 w-14 rounded-full bg-slate-300" />

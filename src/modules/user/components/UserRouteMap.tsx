@@ -1,7 +1,8 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import type { Parada, SearchRouteResult } from './UserRouteMapShared';
+import type { ActiveDriverLocation, Parada, SearchRouteResult } from './UserRouteMapShared';
+import type { DriverLocation } from '../hooks/useDriverLocations';
 
 const UserRouteMapClient = dynamic(() => import('./UserRouteMapClient'), {
   ssr: false,
@@ -19,7 +20,18 @@ type UserRouteMapProps = {
   paradas: Parada[];
   onToggleFavoriteParada: (parada: Parada) => void;
   onRouteFromCurrentLocation: (parada: Parada) => void;
+  activeDrivers?: ActiveDriverLocation[];
+  onSelectDriver?: (driver: ActiveDriverLocation) => void;
+  onRequestDriver?: (driver: ActiveDriverLocation) => void;
+  onFavoriteDriverRoute?: (driver: ActiveDriverLocation) => void;
+  driverLocations?: DriverLocation[];
+  onSendRideRequest?: (driver: DriverLocation) => void;
+  onSaveFavorite?: (driver: DriverLocation) => void;
+  requestedDriverCode?: string;
+  isSendingRequest?: boolean;
   routingStopId?: string;
+  selectedDriverCode?: string;
+  showRouteLines?: boolean;
 };
 
 export function UserRouteMap(props: UserRouteMapProps) {

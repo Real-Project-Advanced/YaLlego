@@ -3,11 +3,18 @@
 import { Heart, Info, Navigation, Route } from 'lucide-react';
 import L from 'leaflet';
 import { useEffect, useState, type PointerEvent } from 'react';
-import { MapContainer, Marker, Polyline, Popup, TileLayer, useMap } from 'react-leaflet';
+import { MapContainer, Marker, Popup, TileLayer, useMap } from 'react-leaflet';
 
 import 'leaflet/dist/leaflet.css';
 import { medellinBounds } from '@/lib/maps/medellin-bounds';
-import { getStopLogoOption, type Parada, type SearchRouteResult } from './UserRouteMapShared';
+import { createBusMarkerIcon } from '@/modules/driver/components';
+import {
+  getStopLogoOption,
+  type ActiveDriverLocation,
+  type Parada,
+  type SearchRouteResult,
+} from './UserRouteMapShared';
+import type { DriverLocation } from '../hooks/useDriverLocations';
 
 type UserRouteMapClientProps = {
   routes: SearchRouteResult[];
@@ -16,7 +23,18 @@ type UserRouteMapClientProps = {
   paradas: Parada[];
   onToggleFavoriteParada: (parada: Parada) => void;
   onRouteFromCurrentLocation: (parada: Parada) => void;
+  activeDrivers?: ActiveDriverLocation[];
+  onSelectDriver?: (driver: ActiveDriverLocation) => void;
+  onRequestDriver?: (driver: ActiveDriverLocation) => void;
+  onFavoriteDriverRoute?: (driver: ActiveDriverLocation) => void;
+  driverLocations?: DriverLocation[];
+  onSendRideRequest?: (driver: DriverLocation) => void;
+  onSaveFavorite?: (driver: DriverLocation) => void;
+  requestedDriverCode?: string;
+  isSendingRequest?: boolean;
   routingStopId?: string;
+  selectedDriverCode?: string;
+  showRouteLines?: boolean;
 };
 
 const createPointIcon = (color: string, label: string) =>
@@ -45,6 +63,31 @@ const createPointIcon = (color: string, label: string) =>
     iconSize: [48, 48],
     iconAnchor: [24, 24],
     popupAnchor: [0, -24],
+  });
+
+const createBusIcon = (driverCode: string) =>
+  L.divIcon({
+    className: 'bus-marker-icon',
+    html: `
+      <div style="
+        width: 48px; height: 48px;
+        background: #1a1a2e;
+        border-radius: 50%;
+        border: 3px solid white;
+        display: flex; flex-direction: column;
+        align-items: center; justify-content: center;
+        color: white;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      ">
+        <span style="font-size: 18px; line-height: 1;">🚌</span>
+        <span style="font-size: 9px; font-weight: 900; margin-top: 1px;">
+          ${driverCode}
+        </span>
+      </div>
+    `,
+    iconSize: [48, 48],
+    iconAnchor: [24, 24],
+    popupAnchor: [0, -28],
   });
 
 const createStopIcon = (parada: Parada, isActive: boolean) => {
@@ -107,16 +150,26 @@ function MapSizeInvalidator() {
 export default function UserRouteMapClient({
   routes,
   selectedRouteId,
-  onSelectRoute,
   paradas,
   onToggleFavoriteParada,
   onRouteFromCurrentLocation,
+  activeDrivers = [],
+  onSelectDriver,
+  onRequestDriver,
+  onFavoriteDriverRoute,
+  driverLocations = [],
+  onSendRideRequest,
+  onSaveFavorite,
+  requestedDriverCode,
+  isSendingRequest = false,
   routingStopId,
+  selectedDriverCode,
 }: UserRouteMapClientProps) {
   const selectedRoute = routes.find((route) => route.id === selectedRouteId) ?? routes[0];
   const [activeStop, setActiveStop] = useState<Parada | null>(null);
   const [popupOffset, setPopupOffset] = useState({ x: 0, y: 0 });
   const [isDraggingPopup, setIsDraggingPopup] = useState(false);
+  const activeDriverCodes = new Set(activeDrivers.map((driver) => driver.driverCode));
 
   const openStopPopup = (parada: Parada, event: L.LeafletMouseEvent) => {
     if (activeStop?.id !== parada.id) {
@@ -169,27 +222,6 @@ export default function UserRouteMapClient({
           attribution="&copy; OpenStreetMap contributors &copy; CARTO"
           url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
         />
-
-        {routes.map((route) => {
-          const isSelected = route.id === selectedRoute?.id;
-
-          return (
-            <Polyline
-              key={route.id}
-              positions={route.coordinates}
-              eventHandlers={{ click: () => onSelectRoute(route.id) }}
-              pathOptions={{
-                color: isSelected ? '#0891b2' : '#2563eb',
-                opacity: isSelected ? 1 : 0.34,
-                weight: isSelected ? 8 : 4,
-                dashArray: isSelected ? undefined : '14,10',
-                lineCap: 'round',
-                lineJoin: 'round',
-                className: 'route-glow',
-              }}
-            />
-          );
-        })}
 
         {selectedRoute && (
           <>
@@ -312,6 +344,125 @@ export default function UserRouteMapClient({
             </Marker>
           );
         })}
+
+        {activeDrivers.map((driver) => {
+          const isSelected = selectedDriverCode === driver.driverCode;
+          const isRequested = requestedDriverCode === driver.driverCode;
+          const eta = driver.estimatedDuration ?? selectedRoute?.duration ?? 8;
+          const price = driver.price ?? 3800;
+
+          return (
+            <Marker
+              key={driver.driverCode}
+              position={[driver.lat, driver.lng]}
+              icon={createBusMarkerIcon(driver.driverCode, driver.isHighlighted || isSelected)}
+              eventHandlers={{
+                click: () => onSelectDriver?.(driver),
+              }}
+            >
+              <Popup minWidth={260}>
+                <div className="space-y-3 text-sm">
+                  <div>
+                    <strong className="text-base text-slate-950">{driver.driverCode}</strong>
+                    <p className="mt-1 font-semibold text-slate-600">{driver.routeName}</p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 text-xs font-black text-slate-700">
+                    <span className="rounded-lg bg-slate-50 p-2">~{Math.round(eta)} min</span>
+                    <span className="rounded-lg bg-slate-50 p-2">
+                      ${new Intl.NumberFormat('es-CO').format(price)}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onSelectDriver?.(driver);
+                      onRequestDriver?.(driver);
+                    }}
+                    disabled={isRequested || isSendingRequest}
+                    className="flex h-10 w-full items-center justify-center rounded-lg bg-emerald-600 px-3 text-xs font-black text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-emerald-300"
+                  >
+                    {isRequested
+                      ? 'Solicitud enviada ✓'
+                      : isSendingRequest
+                        ? 'Enviando'
+                        : 'Solicitar este bus'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onSelectDriver?.(driver);
+                      onFavoriteDriverRoute?.(driver);
+                    }}
+                    className="flex h-10 w-full items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-xs font-black text-slate-800 transition hover:border-rose-300 hover:text-rose-700"
+                  >
+                    <Heart size={15} />
+                    Guardar en favoritos
+                  </button>
+                  {isSelected && (
+                    <p className="rounded-lg bg-emerald-50 p-2 text-xs font-bold text-emerald-700">
+                      Bus seleccionado
+                    </p>
+                  )}
+                </div>
+              </Popup>
+            </Marker>
+          );
+        })}
+
+        {driverLocations
+          .filter((driver) => !activeDriverCodes.has(driver.driver_code))
+          .map((driver) => (
+            <Marker
+              key={driver.id}
+              position={[driver.lat, driver.lng]}
+              icon={createBusIcon(driver.driver_code)}
+            >
+              <Popup closeButton={false} minWidth={260}>
+                <article className="w-[260px] rounded-lg border border-slate-200 bg-white p-4">
+                  <div className="flex items-center gap-3">
+                    <span className="grid size-11 shrink-0 place-items-center rounded-full bg-[#1a1a2e] text-2xl">
+                      🚌
+                    </span>
+                    <div>
+                      <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-500">
+                        Bus activo
+                      </p>
+                      <h3 className="mt-1 text-base font-black text-slate-950">
+                        {driver.route_name}
+                      </h3>
+                      <p className="text-xs font-bold text-slate-500">
+                        Código: {driver.driver_code}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="mt-3 flex flex-wrap gap-2 text-xs font-black">
+                    <span className="rounded-full bg-slate-50 px-3 py-2 text-slate-700">
+                      ~8 min estimado
+                    </span>
+                    <span className="rounded-full bg-emerald-50 px-3 py-2 text-emerald-700">
+                      $3.800
+                    </span>
+                  </div>
+                  <div className="mt-3 grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => onSendRideRequest?.(driver)}
+                      className="h-10 rounded-lg bg-[#1a1a2e] text-xs font-black text-white"
+                    >
+                      Solicitar 🚌
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => onSaveFavorite?.(driver)}
+                      className="h-10 rounded-lg border border-slate-200 bg-white text-xs font-black text-slate-700"
+                    >
+                      ♥ Favorito
+                    </button>
+                  </div>
+                </article>
+              </Popup>
+            </Marker>
+          ))}
       </MapContainer>
 
       <div className="pointer-events-none absolute inset-0 z-[1] bg-[linear-gradient(180deg,rgba(255,255,255,0.10),rgba(255,255,255,0)_24%,rgba(8,145,178,0.08))]" />
@@ -323,7 +474,8 @@ export default function UserRouteMapClient({
         }
 
         .custom-leaflet-icon,
-        .stop-leaflet-icon {
+        .stop-leaflet-icon,
+        .bus-marker-icon {
           background: transparent !important;
           border: none !important;
         }

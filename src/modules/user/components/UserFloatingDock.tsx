@@ -4,8 +4,9 @@ import type { PointerEvent, ReactNode } from 'react';
 import { useEffect, useState } from 'react';
 import { Bell, Bot, Heart, History, MapPinned, PanelRightClose, UserRound } from 'lucide-react';
 import type { UserPayload } from '@/lib/auth';
+import { supabase } from '@/lib/supabase';
 import { UserChatbotPanel } from './UserChatbotPanel';
-import type { Parada } from './UserRouteMapShared';
+import type { Parada, SearchRouteResult } from './UserRouteMapShared';
 
 type UserFloatingDockProps = {
   user: UserPayload;
@@ -30,6 +31,21 @@ const initialPanelPositions: Record<DockPanel, { x: number; y: number }> = {
 };
 
 const favoriteStorageKey = 'yallego.favoritePlaces';
+const favoriteRoutesStorageKey = 'yallego.favoriteRoutes';
+
+type FavoriteRoute = SearchRouteResult & {
+  driverCode?: string;
+  routeName?: string;
+  savedAt: string;
+};
+
+type RideHistoryItem = {
+  id: string;
+  route_name?: string | null;
+  driver_code?: string | null;
+  status?: string | null;
+  created_at?: string | null;
+};
 
 type StoredStop = Partial<Parada> & {
   name?: string;
@@ -76,6 +92,19 @@ const readStoredFavorites = () => {
   }
 };
 
+const readStoredFavoriteRoutes = () => {
+  if (typeof window === 'undefined') return [];
+
+  const stored = window.localStorage.getItem(favoriteRoutesStorageKey);
+  if (!stored) return [];
+
+  try {
+    return JSON.parse(stored) as FavoriteRoute[];
+  } catch {
+    return [];
+  }
+};
+
 export function UserFloatingDock({ user }: UserFloatingDockProps) {
   const [openPanels, setOpenPanels] = useState<Record<DockPanel, boolean>>({
     chat: false,
@@ -87,21 +116,56 @@ export function UserFloatingDock({ user }: UserFloatingDockProps) {
   const [panelPositions, setPanelPositions] = useState(initialPanelPositions);
   const [activeDrag, setActiveDrag] = useState<DockPanel | null>(null);
   const [favoritePois, setFavoritePois] = useState<Parada[]>([]);
+  const [favoriteRoutes, setFavoriteRoutes] = useState<FavoriteRoute[]>([]);
+  const [rideHistory, setRideHistory] = useState<RideHistoryItem[]>([]);
 
   useEffect(() => {
     const loadFavorites = () => {
       setFavoritePois(readStoredFavorites());
+      setFavoriteRoutes(readStoredFavoriteRoutes());
     };
 
     loadFavorites();
     window.addEventListener('storage', loadFavorites);
     window.addEventListener('yallego:favorites-updated', loadFavorites);
+    window.addEventListener('yallego:favorite-routes-updated', loadFavorites);
 
     return () => {
       window.removeEventListener('storage', loadFavorites);
       window.removeEventListener('yallego:favorites-updated', loadFavorites);
+      window.removeEventListener('yallego:favorite-routes-updated', loadFavorites);
     };
   }, []);
+
+  useEffect(() => {
+    const loadHistory = async () => {
+      const { data } = await supabase
+        .from('ride_requests')
+        .select('id, route_name, driver_code, status, created_at')
+        .eq('user_id', String(user.id))
+        .order('created_at', { ascending: false })
+        .limit(20);
+
+      setRideHistory((data ?? []) as RideHistoryItem[]);
+    };
+
+    void loadHistory();
+
+    const channel = supabase
+      .channel(`user-history-${user.id}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'ride_requests', filter: `user_id=eq.${user.id}` },
+        () => {
+          void loadHistory();
+        },
+      )
+      .subscribe();
+
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [user.id]);
 
   const togglePanel = (panel: DockPanel) => {
     setOpenPanels((current) => ({ ...current, [panel]: !current[panel] }));
@@ -167,8 +231,8 @@ export function UserFloatingDock({ user }: UserFloatingDockProps) {
           onDragMove={(event) => handleDragMove('favorites', event)}
           onDragEnd={handleDragEnd}
         >
-          {favoritePois.length > 0 ? (
-            <FavoritePlacesPanel places={favoritePois} />
+          {favoritePois.length > 0 || favoriteRoutes.length > 0 ? (
+            <FavoritePlacesPanel places={favoritePois} routes={favoriteRoutes} />
           ) : (
             <EmptyDockState
               icon={<Heart size={22} />}
@@ -190,11 +254,15 @@ export function UserFloatingDock({ user }: UserFloatingDockProps) {
           onDragMove={(event) => handleDragMove('history', event)}
           onDragEnd={handleDragEnd}
         >
-          <EmptyDockState
-            icon={<MapPinned size={22} />}
-            title="Sin busquedas recientes"
-            description="Tus consultas reales de rutas se mostraran en esta ventana."
-          />
+          {rideHistory.length > 0 ? (
+            <HistoryPanel items={rideHistory} />
+          ) : (
+            <EmptyDockState
+              icon={<MapPinned size={22} />}
+              title="Sin solicitudes recientes"
+              description="Tus solicitudes de bus se mostraran en esta ventana."
+            />
+          )}
         </DockPanelShell>
       )}
 
@@ -338,10 +406,36 @@ function DockPanelShell({
   );
 }
 
-function FavoritePlacesPanel({ places }: { places: Parada[] }) {
+function FavoritePlacesPanel({ places, routes }: { places: Parada[]; routes: FavoriteRoute[] }) {
   return (
     <section className="max-h-[min(420px,calc(100vh-190px))] overflow-y-auto p-4">
       <div className="space-y-3">
+        {routes.map((route) => (
+          <article
+            key={`${route.id}-${route.driverCode ?? route.routeName ?? 'route'}`}
+            className="rounded-lg border border-slate-200 bg-white p-3 shadow-sm"
+          >
+            <div className="flex items-start gap-3">
+              <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-slate-950 text-white">
+                🚌
+              </span>
+              <div className="min-w-0 flex-1">
+                <h3 className="truncate text-sm font-black text-slate-950">
+                  {route.routeName ?? route.name}
+                </h3>
+                <p className="mt-1 text-xs font-black uppercase tracking-[0.16em] text-slate-500">
+                  $3.800
+                </p>
+                <a
+                  href={`/user?favoriteRoute=${encodeURIComponent(route.routeName ?? route.name)}`}
+                  className="mt-3 inline-flex h-9 items-center justify-center rounded-lg bg-slate-950 px-3 text-xs font-black text-white"
+                >
+                  Buscar buses de esta ruta
+                </a>
+              </div>
+            </div>
+          </article>
+        ))}
         {places.map((place) => (
           <article
             key={place.id}
@@ -360,6 +454,40 @@ function FavoritePlacesPanel({ places }: { places: Parada[] }) {
                   {place.descripcion}
                 </p>
               </div>
+            </div>
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function HistoryPanel({ items }: { items: RideHistoryItem[] }) {
+  return (
+    <section className="max-h-[min(420px,calc(100vh-190px))] overflow-y-auto p-4">
+      <div className="space-y-3">
+        {items.map((item) => (
+          <article
+            key={item.id}
+            className="rounded-lg border border-slate-200 bg-white p-3 shadow-sm"
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <h3 className="truncate text-sm font-black text-slate-950">
+                  {item.route_name ?? 'Ruta solicitada'}
+                </h3>
+                <p className="mt-1 text-xs font-bold text-slate-500">
+                  Conductor {item.driver_code ?? 'sin asignar'}
+                </p>
+                <p className="mt-2 text-xs font-semibold text-slate-500">
+                  {item.created_at
+                    ? new Date(item.created_at).toLocaleString('es-CO')
+                    : 'Sin fecha'}
+                </p>
+              </div>
+              <span className="shrink-0 rounded-full bg-slate-100 px-3 py-1 text-[11px] font-black text-slate-700">
+                {item.status ?? 'pending'}
+              </span>
             </div>
           </article>
         ))}

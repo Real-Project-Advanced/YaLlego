@@ -78,6 +78,10 @@ body {
   margin: 0;
 }
 
+.leaflet-control-attribution {
+  display: none !important;
+}
+
 /* ── Keyframe Animations ─────────────────────────── */
 @keyframes fadeInUp {
   from {
