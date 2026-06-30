@@ -102,19 +102,21 @@ export async function POST(req: NextRequest) {
     const aiResponse = await AIService.chat(messages);
 
     // 2. Loggear en MongoDB (No bloqueante)
-    clientPromise
-      .then(async (client) => {
-        const db = client.db('smartops-medellin');
-        await db.collection('ai_logs').insertOne({
-          timestamp: new Date(),
-          conversation: messages,
-          response: aiResponse,
-          model: 'smartops-bot',
+    if (clientPromise) {
+      clientPromise
+        .then(async (client) => {
+          const db = client.db('smartops-medellin');
+          await db.collection('ai_logs').insertOne({
+            timestamp: new Date(),
+            conversation: messages,
+            response: aiResponse,
+            model: 'smartops-bot',
+          });
+        })
+        .catch((dbError) => {
+          console.error('Failed to log to MongoDB (Silent Error):', dbError);
         });
-      })
-      .catch((dbError) => {
-        console.error('Failed to log to MongoDB (Silent Error):', dbError);
-      });
+    }
 
     return NextResponse.json({
       role: 'assistant',
