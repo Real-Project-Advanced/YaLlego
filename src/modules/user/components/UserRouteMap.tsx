@@ -8,7 +8,7 @@ const UserRouteMapClient = dynamic(() => import('./UserRouteMapClient'), {
   ssr: false,
   loading: () => (
     <div className="grid h-full min-h-[360px] place-items-center bg-slate-100 text-sm font-semibold text-slate-500">
-      Cargando mapa de Medellin...
+      Loading Medellin map...
     </div>
   ),
 });

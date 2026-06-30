@@ -3,7 +3,7 @@ import type { Route } from '@/types/route';
 export type UserRoute = Route & {
   price: string;
   frequency: string;
-  status: 'Operando' | 'Alta demanda' | 'Desvio';
+  status: 'Operating' | 'High demand' | 'Detour';
   tags: string[];
   transfers: number;
 };
@@ -26,9 +26,9 @@ export const userRoutes: UserRoute[] = [
     duration: 34,
     color: '#2563eb',
     price: '$3.650',
-    frequency: 'Cada 7 min',
-    status: 'Operando',
-    tags: ['Metro', 'Integrado', 'Baja caminata'],
+    frequency: 'Every 7 min',
+    status: 'Operating',
+    tags: ['Metro', 'Integrated', 'Low walking'],
     transfers: 1,
     coordinates: [
       [6.2692, -75.5653],
@@ -53,9 +53,9 @@ export const userRoutes: UserRoute[] = [
     duration: 28,
     color: '#059669',
     price: '$3.200',
-    frequency: 'Cada 12 min',
-    status: 'Alta demanda',
-    tags: ['Bus urbano', 'Directa', 'Trabajo'],
+    frequency: 'Every 12 min',
+    status: 'High demand',
+    tags: ['Urban bus', 'Direct', 'Work'],
     transfers: 0,
     coordinates: [
       [6.2446, -75.5967],
@@ -72,16 +72,16 @@ export const userRoutes: UserRoute[] = [
   },
   {
     id: 'belen-estadio',
-    name: 'Belen - Estadio directo',
+    name: 'Belen - Direct Stadium',
     startPoint: { name: 'Parque de Belen', lat: 6.2275, lng: -75.6026 },
     endPoint: { name: 'Estadio Atanasio Girardot', lat: 6.2562, lng: -75.5902 },
     distance: 4.7,
     duration: 22,
     color: '#f97316',
     price: '$3.200',
-    frequency: 'Cada 10 min',
-    status: 'Operando',
-    tags: ['Bus urbano', 'Sin transbordos', 'Rapida'],
+    frequency: 'Every 10 min',
+    status: 'Operating',
+    tags: ['Urban bus', 'No transfers', 'Fast'],
     transfers: 0,
     coordinates: [
       [6.2275, -75.6026],
@@ -102,23 +102,23 @@ export const favoriteRoutes = [userRoutes[0], userRoutes[2]];
 export const mobilityNews: MobilityNews[] = [
   {
     id: 'metro-frequency',
-    title: 'Metro aumenta frecuencia en hora pico',
+    title: 'Metro increases frequency during rush hour',
     category: 'Metro',
-    time: 'Hoy, 6:30 a.m.',
-    detail: 'Intervalos menores entre Universidad, San Antonio y Poblado durante la manana.',
+    time: 'Today, 6:30 a.m.',
+    detail: 'Shorter intervals between Universidad, San Antonio, and Poblado during the morning.',
   },
   {
     id: 'la-80',
-    title: 'Obras en corredor de la 80',
-    category: 'Vias',
-    time: 'Actualizado 8:10 a.m.',
-    detail: 'Algunas rutas urbanas toman desvios cortos cerca de Floresta y Calasanz.',
+    title: 'Road work on the 80 corridor',
+    category: 'Roads',
+    time: 'Updated 8:10 a.m.',
+    detail: 'Some urban routes take short detours near Floresta and Calasanz.',
   },
   {
     id: 'rain',
-    title: 'Lluvia prevista al final de la tarde',
-    category: 'Clima',
-    time: 'Proximo reporte 3:00 p.m.',
-    detail: 'Considera rutas con menor caminata si viajas hacia el occidente de Medellin.',
+    title: 'Rain expected late afternoon',
+    category: 'Weather',
+    time: 'Next report 3:00 p.m.',
+    detail: 'Consider routes with less walking if you are traveling toward western Medellin.',
   },
 ];

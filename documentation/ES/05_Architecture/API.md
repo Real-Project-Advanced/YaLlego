@@ -1,102 +1,183 @@
-# API Documentation
+# Documentación de la API
 
-## Overview
+## Descripción General
 
-The application exposes RESTful API endpoints through Next.js Route Handlers.
+La API de LlegoYa está construida con **Next.js Route Handlers** y proporciona servicios de autenticación y un asistente de movilidad impulsado por inteligencia artificial. Todos los endpoints devuelven respuestas en formato JSON.
 
-All endpoints communicate with the Service Layer before accessing the database.
-
----
-
-# Authentication
-
-| Method | Endpoint           | Description            |
-| ------ | ------------------ | ---------------------- |
-| POST   | /api/auth/login    | Authenticate user      |
-| POST   | /api/auth/register | Register a new user    |
-| POST   | /api/auth/logout   | Logout current user    |
-| GET    | /api/auth/me       | Get authenticated user |
-
----
-
-# Users
-
-| Method | Endpoint       | Description           |
-| ------ | -------------- | --------------------- |
-| GET    | /api/users     | Retrieve users        |
-| GET    | /api/users/:id | Retrieve user details |
-| PUT    | /api/users/:id | Update user           |
-| DELETE | /api/users/:id | Delete user           |
-
----
-
-# Routes
-
-| Method | Endpoint        | Description     |
-| ------ | --------------- | --------------- |
-| GET    | /api/routes     | Retrieve routes |
-| POST   | /api/routes     | Create route    |
-| PUT    | /api/routes/:id | Update route    |
-| DELETE | /api/routes/:id | Delete route    |
-
----
-
-# Favorites
-
-| Method | Endpoint           | Description        |
-| ------ | ------------------ | ------------------ |
-| GET    | /api/favorites     | Retrieve favorites |
-| POST   | /api/favorites     | Add favorite       |
-| DELETE | /api/favorites/:id | Remove favorite    |
-
----
-
-# Chat
-
-| Method | Endpoint  | Description            |
-| ------ | --------- | ---------------------- |
-| GET    | /api/chat | Retrieve conversations |
-| POST   | /api/chat | Send message           |
-
----
-
-# Authentication Flow
+**URL Base**
 
 ```text
-Client
-
-↓
-
-Login Request
-
-↓
-
-JWT Generation
-
-↓
-
-Middleware Validation
-
-↓
-
-Protected Route
-
-↓
-
-Database Access
+/api
 ```
 
 ---
 
-# Response Format
+## Endpoints de Autenticación
 
-Successful responses return:
+### POST `/api/auth/login`
 
-- HTTP Status Code
-- JSON payload
+Autentica a un usuario existente.
 
-Error responses include:
+**Cuerpo de la Solicitud**
 
-- Error message
-- Status code
-- Validation details (if applicable)
+```json
+{
+  "email": "usuario@ejemplo.com",
+  "password": "password123"
+}
+```
+
+**Respuesta Exitosa**
+
+```json
+{
+  "success": true,
+  "user": {
+    "id": 1,
+    "fullname": "Juan Pérez",
+    "email": "usuario@ejemplo.com",
+    "role": "USER"
+  }
+}
+```
+
+| Estado | Descripción                     |
+| ------ | ------------------------------- |
+| 200    | Inicio de sesión exitoso        |
+| 400    | Datos de la solicitud inválidos |
+| 401    | Credenciales inválidas          |
+| 500    | Error interno del servidor      |
+
+---
+
+### POST `/api/auth/register`
+
+Registra un nuevo usuario.
+
+**Cuerpo de la Solicitud**
+
+```json
+{
+  "name": "Juan Pérez",
+  "email": "usuario@ejemplo.com",
+  "password": "password123"
+}
+```
+
+**Respuesta Exitosa**
+
+```json
+{
+  "success": true,
+  "user": {
+    "id": 1,
+    "fullname": "Juan Pérez",
+    "email": "usuario@ejemplo.com",
+    "role": "USER"
+  }
+}
+```
+
+| Estado | Descripción                  |
+| ------ | ---------------------------- |
+| 200    | Usuario creado correctamente |
+| 400    | Error de validación          |
+| 500    | Error interno del servidor   |
+
+---
+
+### POST `/api/auth/logout`
+
+Cierra la sesión del usuario actual eliminando las cookies de autenticación y redirigiendo a la página principal.
+
+| Estado | Descripción                |
+| ------ | -------------------------- |
+| 200    | Cierre de sesión exitoso   |
+| 500    | Error interno del servidor |
+
+---
+
+### GET `/api/auth/me`
+
+Devuelve la información del usuario autenticado.
+
+**Respuesta Exitosa**
+
+```json
+{
+  "user": {
+    "id": 1,
+    "fullname": "Juan Pérez",
+    "email": "usuario@ejemplo.com",
+    "role": "USER"
+  }
+}
+```
+
+| Estado | Descripción                                    |
+| ------ | ---------------------------------------------- |
+| 200    | Información del usuario obtenida correctamente |
+| 401    | No autorizado                                  |
+| 500    | Error interno del servidor                     |
+
+---
+
+### POST `/api/auth/refresh`
+
+Renueva el token de acceso utilizando el token de actualización (_refresh token_).
+
+**Respuesta Exitosa**
+
+```json
+{
+  "success": true,
+  "message": "Tokens renovados correctamente",
+  "data": {
+    "accessToken": "..."
+  }
+}
+```
+
+| Estado | Descripción                       |
+| ------ | --------------------------------- |
+| 200    | Token renovado correctamente      |
+| 401    | Refresh token inválido o expirado |
+| 500    | Error interno del servidor        |
+
+---
+
+## Asistente de IA
+
+### POST `/api/chat`
+
+Envía una conversación al asistente de inteligencia artificial impulsado por Ollama.
+
+**Cuerpo de la Solicitud**
+
+```json
+{
+  "messages": [
+    {
+      "role": "user",
+      "content": "¿Qué bus debo tomar para ir a Guarne?"
+    }
+  ]
+}
+```
+
+**Respuesta Exitosa**
+
+```json
+{
+  "role": "assistant",
+  "content": "Puedes tomar la ruta..."
+}
+```
+
+Todas las conversaciones se registran de forma asíncrona en MongoDB con fines de monitoreo.
+
+| Estado | Descripción                      |
+| ------ | -------------------------------- |
+| 200    | Respuesta generada correctamente |
+| 400    | Solicitud inválida               |
+| 500    | Error interno del servidor       |

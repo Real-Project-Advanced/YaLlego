@@ -1,3 +1,3 @@
-// Index file for auth components
+// Auth component exports.
 export { LoginForm } from './LoginForm';
 export { RegisterForm } from './RegisterForm';

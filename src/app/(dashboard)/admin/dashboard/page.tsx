@@ -22,29 +22,33 @@ export default async function AdminDashboard() {
     prisma.routes.count(),
   ]);
 
+  const stats = [
+    { title: 'Users', value: userCount, borderClassName: 'border-blue-500' },
+    { title: 'Drivers', value: driverCount, borderClassName: 'border-green-500' },
+    { title: 'Vehicles', value: vehicleCount, borderClassName: 'border-purple-500' },
+    { title: 'Routes', value: routeCount, borderClassName: 'border-orange-500' },
+  ];
+
   return (
     <main className="min-h-screen bg-slate-50">
-      <div className="max-w-7xl mx-auto p-6">
+      <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 sm:py-6">
         <AdminNavbar />
 
         <div className="mt-6 mb-8">
-          <h1 className="text-4xl font-black text-slate-950 mb-2">Panel Administrativo</h1>
+          <h1 className="mb-2 text-[clamp(2rem,6vw,2.5rem)] font-black leading-tight text-slate-950">
+            Admin Panel
+          </h1>
           <p className="text-slate-600">
-            Bienvenido, <span className="font-bold">{user.fullname}</span>
+            Welcome, <span className="font-bold">{user.fullname}</span>
           </p>
         </div>
 
         {/* Quick Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-          {[
-            { title: 'Usuarios', value: userCount, color: 'blue' },
-            { title: 'Conductores', value: driverCount, color: 'green' },
-            { title: 'Vehículos', value: vehicleCount, color: 'purple' },
-            { title: 'Rutas', value: routeCount, color: 'orange' },
-          ].map((stat) => (
+        <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          {stats.map((stat) => (
             <div
               key={stat.title}
-              className={`bg-white rounded-lg shadow p-6 border-l-4 border-${stat.color}-500`}
+              className={`rounded-lg border-l-4 bg-white p-5 shadow sm:p-6 ${stat.borderClassName}`}
             >
               <p className="text-slate-600 text-sm font-semibold mb-1">{stat.title}</p>
               <p className="text-3xl font-black text-slate-950">{stat.value}</p>
@@ -52,67 +56,15 @@ export default async function AdminDashboard() {
           ))}
         </div>
 
-        {/* Menu de Opciones */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Gestionar Usuarios */}
-          <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition">
+        {/* Options menu */}
+        <div className="grid grid-cols-1 gap-5 lg:grid-cols-2 lg:gap-6">
+          {/* Manage vehicles */}
+          <div className="rounded-lg bg-white p-5 shadow-md transition hover:shadow-lg sm:p-6">
             <div className="flex items-start justify-between mb-4">
-              <div>
-                <h2 className="text-xl font-bold text-slate-950 mb-2">👥 Gestionar Usuarios</h2>
+              <div className="min-w-0">
+                <h2 className="text-xl font-bold text-slate-950 mb-2">Manage Vehicles</h2>
                 <p className="text-slate-600 text-sm">
-                  Crea, edita y administra usuarios del sistema (SUPER_ADMIN, DRIVER, USER)
-                </p>
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Link
-                href="/admin/users"
-                className="block w-full text-center bg-blue-600 text-white py-2 rounded-lg font-semibold hover:bg-blue-700 transition text-sm"
-              >
-                Ver Usuarios
-              </Link>
-              <Link
-                href="/admin/users/create"
-                className="block w-full text-center border border-blue-600 text-blue-600 py-2 rounded-lg font-semibold hover:bg-blue-50 transition text-sm"
-              >
-                Crear Usuario
-              </Link>
-            </div>
-          </div>
-
-          {/* Gestionar Conductores */}
-          <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition">
-            <div className="flex items-start justify-between mb-4">
-              <div>
-                <h2 className="text-xl font-bold text-slate-950 mb-2">🚗 Gestionar Conductores</h2>
-                <p className="text-slate-600 text-sm">
-                  Registra nuevos conductores, actualiza licencias y asigna vehículos
-                </p>
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Link
-                href="/admin/drivers"
-                className="block w-full text-center bg-green-600 text-white py-2 rounded-lg font-semibold hover:bg-green-700 transition text-sm"
-              >
-                Ver Conductores
-              </Link>
-              <Link
-                href="/admin/drivers/create"
-                className="block w-full text-center border border-green-600 text-green-600 py-2 rounded-lg font-semibold hover:bg-green-50 transition text-sm"
-              >
-                Registrar Conductor
-              </Link>
-            </div>
-          </div>
-
-          {/* Gestionar Vehículos */}
-          <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition">
-            <div className="flex items-start justify-between mb-4">
-              <div>
-                <h2 className="text-xl font-bold text-slate-950 mb-2">🚌 Gestionar Vehículos</h2>
-                <p className="text-slate-600 text-sm">
-                  Registra vehículos, actualiza capacidades y controla su estado
+                  Register vehicles, update capacity, and manage status
                 </p>
               </div>
             </div>
@@ -121,24 +73,50 @@ export default async function AdminDashboard() {
                 href="/admin/transports"
                 className="block w-full text-center bg-purple-600 text-white py-2 rounded-lg font-semibold hover:bg-purple-700 transition text-sm"
               >
-                Ver Vehículos
+                View Vehicles
               </Link>
               <Link
                 href="/admin/transports/create"
                 className="block w-full text-center border border-purple-600 text-purple-600 py-2 rounded-lg font-semibold hover:bg-purple-50 transition text-sm"
               >
-                Registrar Vehículo
+                Create Vehicle
               </Link>
             </div>
           </div>
 
-          {/* Gestionar Rutas */}
-          <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition">
+          {/* Manage drivers */}
+          <div className="rounded-lg bg-white p-5 shadow-md transition hover:shadow-lg sm:p-6">
             <div className="flex items-start justify-between mb-4">
-              <div>
-                <h2 className="text-xl font-bold text-slate-950 mb-2">🗺️ Gestionar Rutas</h2>
+              <div className="min-w-0">
+                <h2 className="text-xl font-bold text-slate-950 mb-2">🚗 Manage Drivers</h2>
                 <p className="text-slate-600 text-sm">
-                  Crea nuevas rutas, asigna vehículos y gestiona destinos
+                  Register new drivers, update licenses, and assign vehicles
+                </p>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Link
+                href="/admin/drivers"
+                className="block w-full text-center bg-green-600 text-white py-2 rounded-lg font-semibold hover:bg-green-700 transition text-sm"
+              >
+                View Drivers
+              </Link>
+              <Link
+                href="/admin/drivers/create"
+                className="block w-full text-center border border-green-600 text-green-600 py-2 rounded-lg font-semibold hover:bg-green-50 transition text-sm"
+              >
+                Register Driver
+              </Link>
+            </div>
+          </div>
+
+          {/* Manage routes */}
+          <div className="rounded-lg bg-white p-5 shadow-md transition hover:shadow-lg sm:p-6">
+            <div className="flex items-start justify-between mb-4">
+              <div className="min-w-0">
+                <h2 className="text-xl font-bold text-slate-950 mb-2">🗺️ Manage Routes</h2>
+                <p className="text-slate-600 text-sm">
+                  Create new routes, assign vehicles, and manage destinations
                 </p>
               </div>
             </div>
@@ -147,27 +125,27 @@ export default async function AdminDashboard() {
                 href="/admin/routes"
                 className="block w-full text-center bg-orange-600 text-white py-2 rounded-lg font-semibold hover:bg-orange-700 transition text-sm"
               >
-                Ver Rutas
+                View Routes
               </Link>
               <Link
                 href="/admin/routes/create"
                 className="block w-full text-center border border-orange-600 text-orange-600 py-2 rounded-lg font-semibold hover:bg-orange-50 transition text-sm"
               >
-                Crear Ruta
+                Create Route
               </Link>
             </div>
           </div>
         </div>
 
-        {/* Información Importante */}
-        <div className="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-6">
-          <h3 className="text-lg font-bold text-blue-900 mb-3">ℹ️ Información Importante</h3>
+        {/* Important information */}
+        <div className="mt-8 rounded-lg border border-blue-200 bg-blue-50 p-5 sm:p-6">
+          <h3 className="text-lg font-bold text-blue-900 mb-3">Important Information</h3>
           <ul className="space-y-2 text-sm text-blue-800">
-            <li>✓ Como SUPER_ADMIN tienes acceso a todas las funciones del sistema</li>
-            <li>✓ Puedes crear y gestionar usuarios con diferentes roles</li>
-            <li>✓ Es recomendable crear conductores primero antes de asignarlos a vehículos</li>
-            <li>✓ Las rutas requieren vehículos registrados</li>
-            <li>✓ Todos los cambios se registran y pueden auditarse</li>
+            <li>As SUPER_ADMIN, you have access to all system features</li>
+            <li>You can create and manage users with different roles</li>
+            <li>Create drivers before assigning them to vehicles</li>
+            <li>Routes require registered vehicles</li>
+            <li>All changes are recorded and can be audited</li>
           </ul>
         </div>
       </div>
