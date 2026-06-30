@@ -6,13 +6,15 @@ import 'leaflet/dist/leaflet.css';
 import '@/lib/maps/leaflet-config';
 import { medellinBounds } from '@/lib/maps/medellin-bounds';
 import { mockRoutes } from '@/lib/maps/mock-routes';
-import { mockBuses } from '@//lib/maps/mock-buses';
+import { useLiveBuses } from '@/hooks/useLiveBuses';
 
 import RoutePolyline from './RoutePolyline';
 import BusMarker from './BusMarker';
 import RouteSidebar from './RouteSidebar';
 
 export default function MapView() {
+  const buses = useLiveBuses();
+
   return (
     <div className="flex h-screen w-full overflow-hidden">
       <div className="flex-1 h-full min-h-0">
@@ -37,7 +39,7 @@ export default function MapView() {
             <RoutePolyline key={route.id} route={route} />
           ))}
 
-          {mockBuses.map((bus) => (
+          {buses.map((bus) => (
             <BusMarker key={bus.id} bus={bus} />
           ))}
         </MapContainer>
