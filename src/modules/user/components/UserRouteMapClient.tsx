@@ -165,6 +165,7 @@ export default function UserRouteMapClient({
   isSendingRequest = false,
   routingStopId,
   selectedDriverCode,
+  showRouteLines = false,
 }: UserRouteMapClientProps) {
   const selectedRoute = routes.find((route) => route.id === selectedRouteId) ?? routes[0];
   const routeStartsAtCurrentLocation = isSameMapPoint(currentLocation, selectedRoute?.startPoint);
@@ -260,7 +261,7 @@ export default function UserRouteMapClient({
 
         {selectedRoute && (
           <>
-            {selectedRoute.coordinates.length > 1 && (
+            {showRouteLines && selectedRoute.coordinates.length > 1 && (
               <Polyline
                 pane="user-route-line-pane"
                 positions={selectedRoute.coordinates}

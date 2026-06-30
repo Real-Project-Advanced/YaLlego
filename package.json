@@ -36,6 +36,7 @@
     "@capacitor/core": "^6.2.1",
     "@capacitor/geolocation": "^6.0.1",
     "@capacitor/ios": "^6.2.1",
+    "@capacitor/push-notifications": "^6.0.5",
     "@heroui/react": "^3.2.1",
     "@heroui/system": "^2.4.28",
     "@heroui/theme": "^2.4.26",

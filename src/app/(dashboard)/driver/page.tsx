@@ -61,16 +61,6 @@ const buildRoute = (origin?: string, destination?: string): DriverRoute => {
   };
 };
 
-const uniqueRoutes = (routes: DriverRoute[]) => {
-  const seen = new Set<string>();
-
-  return routes.filter((route) => {
-    if (seen.has(route.name)) return false;
-    seen.add(route.name);
-    return true;
-  });
-};
-
 export default async function DriverPage() {
   const user = await getCurrentUser();
 
@@ -103,12 +93,6 @@ export default async function DriverPage() {
     : routes.length > 0
       ? buildRoute(routes[0].origin, routes[0].destination)
       : fallbackRoutes[0];
-  const availableRoutes = uniqueRoutes([
-    initialRoute,
-    ...(routes.length > 0
-      ? routes.map((route) => buildRoute(route.origin, route.destination))
-      : fallbackRoutes),
-  ]);
   const driverId = driver?.id ?? user.id;
   const profile: DriverProfile = {
     driverId,
@@ -116,7 +100,7 @@ export default async function DriverPage() {
     licenseType: driver?.license_type ?? 'Sin registrar',
     experienceYears: driver?.experience_years ?? 0,
     route: initialRoute,
-    availableRoutes,
+    availableRoutes: [initialRoute],
     totalAcceptedRequests: 0,
   };
 

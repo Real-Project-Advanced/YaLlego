@@ -104,13 +104,17 @@ export function useSendRideRequest() {
       const nextRequestId = String(data?.id ?? '');
       setRequestId(nextRequestId);
 
-      await supabase.from('push_notifications').insert({
-        ride_request_id: nextRequestId,
-        driver_id: String(driverId),
-        title: 'Nueva solicitud de bus',
-        body: `${user.fullname} solicita tu bus en ${nearestStop?.titulo ?? route.startPoint.name}.`,
-        created_at: new Date().toISOString(),
-      });
+      await fetch('/api/push/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          recipientUserId: String(driverId),
+          rideRequestId: nextRequestId,
+          driverId: String(driverId),
+          title: 'Nueva solicitud de bus',
+          body: `${user.fullname} solicita tu bus en ${nearestStop?.titulo ?? route.startPoint.name}.`,
+        }),
+      }).catch(() => undefined);
 
       return nextRequestId;
     },

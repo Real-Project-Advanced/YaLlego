@@ -71,6 +71,7 @@ alter table driver_locations replica identity full;
 alter table ride_requests replica identity full;
 alter table driver_routes replica identity full;
 alter table user_favorite_routes replica identity full;
+alter table push_tokens replica identity full;
 alter table push_notifications replica identity full;
 
 grant usage on schema public to anon, authenticated;
@@ -105,6 +106,13 @@ end $$;
 do $$
 begin
   alter publication supabase_realtime add table user_favorite_routes;
+exception
+  when duplicate_object then null;
+end $$;
+
+do $$
+begin
+  alter publication supabase_realtime add table push_tokens;
 exception
   when duplicate_object then null;
 end $$;

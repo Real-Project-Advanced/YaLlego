@@ -280,7 +280,21 @@ const buildPlaceQueries = (value: string) => {
 const isMedellinAreaPlace = (place: NominatimPlace) => {
   const haystack = `${place.display_name} ${Object.values(place.address ?? {}).join(' ')}`;
 
-  return /medell[ií]n|antioquia|valle de aburr[aá]|colombia/i.test(haystack);
+  return /medell[ií]n|valle de aburr[aá]/i.test(haystack);
+};
+
+const isInsideMedellinViewbox = (place: NominatimPlace) => {
+  const lat = Number(place.lat);
+  const lng = Number(place.lon);
+
+  return (
+    Number.isFinite(lat) &&
+    Number.isFinite(lng) &&
+    lat >= 6.15 &&
+    lat <= 6.36 &&
+    lng >= -75.7 &&
+    lng <= -75.48
+  );
 };
 
 async function geocodePlace(value: string): Promise<GeocodedPlace> {
@@ -314,13 +328,13 @@ async function geocodePlace(value: string): Promise<GeocodedPlace> {
 
   const medellinResults = results.filter(
     (result) =>
-      result.display_name.toLowerCase().includes('medellín') ||
-      result.display_name.toLowerCase().includes('medellin') ||
-      result.display_name.toLowerCase().includes('antioquia') ||
-      isMedellinAreaPlace(result),
+      isInsideMedellinViewbox(result) &&
+      (result.display_name.toLowerCase().includes('medellín') ||
+        result.display_name.toLowerCase().includes('medellin') ||
+        isMedellinAreaPlace(result)),
   );
 
-  const place = medellinResults[0] ?? results[0];
+  const place = medellinResults[0];
 
   if (!place) throw new Error(`No encontre "${value}" dentro de Medellin.`);
 
@@ -485,6 +499,7 @@ export function UserRouteSearch({ user, visiblePanels, onTogglePanel }: UserRout
   const routedFavoriteIdRef = useRef('');
   const searchParams = useSearchParams();
   const favoriteToRouteId = searchParams.get('favorite');
+  const favoriteRouteName = searchParams.get('favoriteRoute');
   const driverLocations = useDriverLocations();
   const sendRideRequest = useSendRideRequest();
   const rideRequestStatus = useRideRequestStatus(currentRideRequestId);
@@ -723,10 +738,30 @@ export function UserRouteSearch({ user, visiblePanels, onTogglePanel }: UserRout
   }, [rideRequestStatus.request?.status]);
 
   const saveFavoriteRoute = async (driver = selectedDriver) => {
-    if (!selectedRoute) return;
+    if (!selectedRoute && !driver) return;
+
+    const routeToSave: SearchRouteResult =
+      selectedRoute ??
+      ({
+        id: `driver-${driver?.driverCode ?? 'route'}-${Date.now()}`,
+        name: driver?.routeName ?? 'Ruta activa',
+        startPoint: {
+          name: driver?.routeName ?? 'Ruta activa',
+          lat: driver?.lat ?? 6.2442,
+          lng: driver?.lng ?? -75.5812,
+        },
+        endPoint: {
+          name: driver?.routeName ?? 'Ruta activa',
+          lat: driver?.lat ?? 6.2442,
+          lng: driver?.lng ?? -75.5812,
+        },
+        distance: driver?.totalDistance ?? 0,
+        duration: driver?.estimatedDuration ?? 0,
+        coordinates: driver ? [[driver.lat, driver.lng]] : [],
+      } satisfies SearchRouteResult);
 
     const favoriteRoute: FavoriteRoute = {
-      ...selectedRoute,
+      ...routeToSave,
       driverCode: driver?.driverCode,
       routeName: driver?.routeName,
       savedAt: new Date().toISOString(),
@@ -735,8 +770,8 @@ export function UserRouteSearch({ user, visiblePanels, onTogglePanel }: UserRout
       favoriteRoute,
       ...favoriteRoutes.filter(
         (route) =>
-          route.startPoint.name !== selectedRoute.startPoint.name ||
-          route.endPoint.name !== selectedRoute.endPoint.name ||
+          route.startPoint.name !== routeToSave.startPoint.name ||
+          route.endPoint.name !== routeToSave.endPoint.name ||
           route.driverCode !== driver?.driverCode,
       ),
     ].slice(0, 20);
@@ -874,6 +909,29 @@ export function UserRouteSearch({ user, visiblePanels, onTogglePanel }: UserRout
 
     return () => window.clearTimeout(routeTimer);
   }, [favoriteToRouteId, routeFromCurrentLocationToStop]);
+
+  useEffect(() => {
+    if (!favoriteRouteName) return;
+
+    const decodedRouteName = favoriteRouteName.trim();
+    if (!decodedRouteName) return;
+
+    const matchingDriver = driverLocations.drivers.find(
+      (driver) => driver.routeName === decodedRouteName,
+    );
+
+    const favoriteRouteTimer = window.setTimeout(() => {
+      if (!matchingDriver) {
+        setRequestStatus(`No veo buses activos de ${decodedRouteName} en este momento.`);
+        return;
+      }
+
+      setSelectedDriver(matchingDriver);
+      setRequestStatus(`Buses disponibles para ${decodedRouteName}.`);
+    }, 0);
+
+    return () => window.clearTimeout(favoriteRouteTimer);
+  }, [driverLocations.drivers, favoriteRouteName]);
 
   const useCurrentLocation = async () => {
     setError('');
@@ -1022,7 +1080,7 @@ export function UserRouteSearch({ user, visiblePanels, onTogglePanel }: UserRout
           isSendingRequest={sendRideRequest.isSending}
           routingStopId={routingStopId}
           selectedDriverCode={selectedDriver?.driverCode}
-          showRouteLines={routes.length > 0}
+          showRouteLines={visiblePanels.route && Boolean(selectedDriver)}
         />
       </div>
 
@@ -1829,44 +1887,52 @@ export function UserRouteSearch({ user, visiblePanels, onTogglePanel }: UserRout
 
         {activeMobileSheet === 'favorites' && (
           <div className="space-y-3">
-            {favoriteStops.length === 0 ? (
+            {favoriteRoutes.length === 0 ? (
               <div className="rounded-lg border border-dashed border-slate-300 bg-slate-50 p-4 text-sm font-semibold leading-6 text-slate-500">
-                Cuando guardes una parada desde el mapa, aparecera aqui.
+                Cuando guardes la ruta de un bus, aparecera aqui.
               </div>
             ) : (
-              favoriteStops.map((parada) => {
-                const option = getStopLogoOption(parada.logoId);
-                const Icon = option.icon;
+              favoriteRoutes.map((route) => {
+                const routeName = route.routeName ?? route.name;
 
                 return (
                   <div
-                    key={parada.id}
+                    key={`${route.id}-${route.driverCode ?? routeName}`}
                     className="flex items-start gap-3 rounded-lg border border-slate-200 bg-white p-3"
                   >
-                    <span
-                      className="grid size-10 shrink-0 place-items-center rounded-full text-slate-950"
-                      style={{ backgroundColor: option.color }}
-                    >
-                      <Icon size={18} />
+                    <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-slate-950 text-white">
+                      <BusFront size={18} />
                     </span>
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-black text-slate-950">{parada.titulo}</p>
-                      <p className="mt-1 line-clamp-2 text-xs font-semibold leading-5 text-slate-500">
-                        {parada.descripcion}
+                      <p className="truncate text-sm font-black text-slate-950">{routeName}</p>
+                      <p className="mt-1 text-xs font-semibold leading-5 text-slate-500">
+                        Conductor {route.driverCode ?? 'por asignar'} · $3.800
                       </p>
                     </div>
                     <button
                       type="button"
-                      onClick={() => void routeFromCurrentLocationToStop(parada)}
-                      disabled={routingStopId === parada.id}
+                      onClick={() => {
+                        const matchingDriver = driverLocations.drivers.find(
+                          (driver) =>
+                            driver.routeName === routeName ||
+                            driver.driverCode === route.driverCode,
+                        );
+
+                        if (matchingDriver) {
+                          selectNearbyDriver(matchingDriver);
+                        }
+
+                        setRequestStatus(
+                          matchingDriver
+                            ? `Buses disponibles para ${routeName}.`
+                            : `No veo buses activos de ${routeName} en este momento.`,
+                        );
+                        closeMobileSheet();
+                      }}
                       className="grid size-9 shrink-0 place-items-center rounded-lg text-cyan-700 transition hover:bg-cyan-50 disabled:cursor-wait disabled:text-slate-400"
-                      aria-label={`Como llegar a ${parada.titulo}`}
+                      aria-label={`Buscar buses de ${routeName}`}
                     >
-                      {routingStopId === parada.id ? (
-                        <Loader2 size={16} className="animate-spin" />
-                      ) : (
-                        <Navigation size={16} />
-                      )}
+                      <Navigation size={16} />
                     </button>
                   </div>
                 );

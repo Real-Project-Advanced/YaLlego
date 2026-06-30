@@ -6,6 +6,7 @@ import type { RideRequest } from '../hooks/useRideRequests';
 type RideRequestCardProps = {
   request: RideRequest;
   nearestStopName: string;
+  distanceKm: number;
   etaMinutes: number;
   onAccept: (requestId: string) => void;
   onReject: (requestId: string) => void;
@@ -14,6 +15,7 @@ type RideRequestCardProps = {
 export function RideRequestCard({
   request,
   nearestStopName,
+  distanceKm,
   etaMinutes,
   onAccept,
   onReject,
@@ -29,7 +31,10 @@ export function RideRequestCard({
             <MapPin size={15} className="mt-0.5 shrink-0 text-[#0369a1]" />
             {nearestStopName}
           </p>
-          <p className="mt-1 text-xs font-bold text-slate-500">~{etaMinutes} min hasta la parada</p>
+          <p className="mt-1 text-xs font-bold text-slate-500">
+            {new Intl.NumberFormat('es-CO', { maximumFractionDigits: 1 }).format(distanceKm)} km · ~
+            {etaMinutes} min hasta la parada
+          </p>
         </div>
       </div>
 

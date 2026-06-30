@@ -116,7 +116,7 @@ export function UserFloatingDock({ user }: UserFloatingDockProps) {
   });
   const [panelPositions, setPanelPositions] = useState(initialPanelPositions);
   const [activeDrag, setActiveDrag] = useState<DockPanel | null>(null);
-  const [favoritePois, setFavoritePois] = useState<Parada[]>([]);
+  const [, setFavoritePois] = useState<Parada[]>([]);
   const [favoriteRoutes, setFavoriteRoutes] = useState<FavoriteRoute[]>([]);
   const [rideHistory, setRideHistory] = useState<RideHistoryItem[]>([]);
 
@@ -245,13 +245,13 @@ export function UserFloatingDock({ user }: UserFloatingDockProps) {
           onDragMove={(event) => handleDragMove('favorites', event)}
           onDragEnd={handleDragEnd}
         >
-          {favoritePois.length > 0 || favoriteRoutes.length > 0 ? (
-            <FavoritePlacesPanel places={favoritePois} routes={favoriteRoutes} />
+          {favoriteRoutes.length > 0 ? (
+            <FavoritePlacesPanel routes={favoriteRoutes} />
           ) : (
             <EmptyDockState
               icon={<Heart size={22} />}
-              title="No tienes lugares guardados"
-              description="Cuando guardes un lugar desde el mapa, aparecera aqui."
+              title="No tienes rutas guardadas"
+              description="Cuando guardes la ruta de un bus desde el mapa, aparecera aqui."
             />
           )}
         </DockPanelShell>
@@ -420,7 +420,7 @@ function DockPanelShell({
   );
 }
 
-function FavoritePlacesPanel({ places, routes }: { places: Parada[]; routes: FavoriteRoute[] }) {
+function FavoritePlacesPanel({ routes }: { routes: FavoriteRoute[] }) {
   return (
     <section className="max-h-[min(420px,calc(100vh-190px))] overflow-y-auto p-4">
       <div className="space-y-3">
@@ -446,27 +446,6 @@ function FavoritePlacesPanel({ places, routes }: { places: Parada[]; routes: Fav
                 >
                   Buscar buses de esta ruta
                 </a>
-              </div>
-            </div>
-          </article>
-        ))}
-        {places.map((place) => (
-          <article
-            key={place.id}
-            className="rounded-lg border border-slate-200 bg-white p-3 shadow-sm"
-          >
-            <div className="flex items-start gap-3">
-              <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-rose-50 text-rose-700 ring-1 ring-rose-100">
-                <Heart size={17} fill="currentColor" />
-              </span>
-              <div className="min-w-0">
-                <h3 className="truncate text-sm font-black text-slate-950">{place.titulo}</h3>
-                <p className="mt-1 text-xs font-black uppercase tracking-[0.16em] text-slate-500">
-                  Parada
-                </p>
-                <p className="mt-2 line-clamp-2 text-xs font-semibold leading-5 text-slate-500">
-                  {place.descripcion}
-                </p>
               </div>
             </div>
           </article>

@@ -87,7 +87,7 @@ export function DriverDashboard({ profile, user }: DriverDashboardProps) {
     () => (profile.availableRoutes?.length ? profile.availableRoutes : [profile.route]),
     [profile.availableRoutes, profile.route],
   );
-  const [selectedRouteName, setSelectedRouteName] = useState(profile.route.name);
+  const selectedRouteName = profile.route.name;
   const [estimatedDuration, setEstimatedDuration] = useState('');
   const [acceptedPickups, setAcceptedPickups] = useState<AcceptedPickup[]>([]);
   const [saveMessage, setSaveMessage] = useState('');
@@ -100,6 +100,11 @@ export function DriverDashboard({ profile, user }: DriverDashboardProps) {
   );
   const automaticDistanceKm = trackingDistance || selectedRoute.distanceKm;
   const automaticEstimatedDuration = estimateMinutes(automaticDistanceKm);
+  const savedEstimatedDuration = Number(estimatedDuration);
+  const routeEstimatedDuration =
+    Number.isFinite(savedEstimatedDuration) && savedEstimatedDuration > 0
+      ? savedEstimatedDuration
+      : automaticEstimatedDuration;
 
   const tracking = useDriverTracking({
     driverId: profile.driverId,
@@ -253,7 +258,7 @@ export function DriverDashboard({ profile, user }: DriverDashboardProps) {
         driver_id: String(profile.driverId),
         driver_code: profile.driverCode,
         route_name: selectedRoute.name,
-        estimated_duration: automaticEstimatedDuration,
+        estimated_duration: routeEstimatedDuration,
         total_distance: automaticDistanceKm,
         price: 3800,
         updated_at: new Date().toISOString(),
@@ -436,6 +441,7 @@ export function DriverDashboard({ profile, user }: DriverDashboardProps) {
                     key={request.id}
                     request={request}
                     nearestStopName={stop.name}
+                    distanceKm={distance}
                     etaMinutes={estimateMinutes(distance)}
                     onAccept={() => void handleAcceptRequest(request)}
                     onReject={(requestId) =>
@@ -456,9 +462,10 @@ export function DriverDashboard({ profile, user }: DriverDashboardProps) {
                 <input
                   type="number"
                   min="1"
-                  value={automaticEstimatedDuration}
-                  readOnly
-                  className="mt-2 h-12 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm font-bold text-slate-950 outline-none"
+                  value={estimatedDuration}
+                  onChange={(event) => setEstimatedDuration(event.target.value)}
+                  placeholder={`${automaticEstimatedDuration}`}
+                  className="mt-2 h-12 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm font-bold text-slate-950 outline-none focus:border-[#0369a1] focus:ring-2 focus:ring-sky-100"
                 />
               </label>
               <div className="grid grid-cols-2 gap-3">

@@ -122,19 +122,25 @@ export function useRideRequests({ driverId }: UseRideRequestsOptions) {
         current.map((request) => (request.id === requestId ? { ...request, status } : request)),
       );
 
-      await supabase.from('push_notifications').insert({
-        ride_request_id: requestId,
-        title: status === 'accepted' ? 'Tu bus viene' : 'Bus no disponible',
-        body:
-          status === 'accepted'
-            ? 'Tu bus viene, espera en tu parada asignada.'
-            : 'Bus no disponible, intenta con otro.',
-        created_at: new Date().toISOString(),
-      });
+      const request = requests.find((item) => item.id === requestId);
+
+      await fetch('/api/push/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          recipientUserId: request?.user_id ? String(request.user_id) : undefined,
+          rideRequestId: requestId,
+          title: status === 'accepted' ? 'Tu bus viene' : 'Bus no disponible',
+          body:
+            status === 'accepted'
+              ? 'Tu bus viene, espera en tu parada asignada.'
+              : 'Bus no disponible, intenta con otro.',
+        }),
+      }).catch(() => undefined);
 
       return true;
     },
-    [tableExists],
+    [requests, tableExists],
   );
 
   useEffect(() => {

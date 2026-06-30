@@ -1,82 +1,61 @@
 'use client';
 
 import Link from 'next/link';
-import { Heart, MapPin, Navigation } from 'lucide-react';
-import Image from 'next/image';
+import { BusFront, Heart, Navigation, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import type { Parada } from './UserRouteMapShared';
+import type { SearchRouteResult } from './UserRouteMapShared';
 
-const favoriteStorageKey = 'yallego.favoritePlaces';
+const favoriteRoutesStorageKey = 'yallego.favoriteRoutes';
 
-type StoredStop = Partial<Parada> & {
-  name?: string;
-  lat?: number;
-  lng?: number;
-  detail?: string;
-  category?: string;
+type FavoriteRoute = SearchRouteResult & {
+  driverCode?: string;
+  routeName?: string;
+  savedAt: string;
 };
 
-const normalizeStoredStop = (item: StoredStop): Parada | null => {
-  const latitud = item.latitud ?? item.lat;
-  const longitud = item.longitud ?? item.lng;
-  const titulo = item.titulo ?? item.name;
-  const descripcion = item.descripcion ?? item.detail;
-
-  if (!item.id || typeof latitud !== 'number' || typeof longitud !== 'number' || !titulo) {
-    return null;
-  }
-
-  return {
-    id: item.id,
-    latitud,
-    longitud,
-    logoId: item.logoId ?? 'home',
-    logoUrl: item.logoUrl ?? '',
-    titulo,
-    descripcion: descripcion ?? 'Parada guardada.',
-    esFavorito: item.esFavorito ?? true,
-    informacionAdicional: item.informacionAdicional ?? item.category,
-  };
-};
-
-const readStoredFavorites = () => {
+const readStoredFavoriteRoutes = () => {
   if (typeof window === 'undefined') return [];
 
-  const stored = window.localStorage.getItem(favoriteStorageKey);
+  const stored = window.localStorage.getItem(favoriteRoutesStorageKey);
   if (!stored) return [];
 
   try {
-    const parsed = JSON.parse(stored) as StoredStop[];
-    return parsed.map(normalizeStoredStop).filter((item): item is Parada => Boolean(item));
+    return JSON.parse(stored) as FavoriteRoute[];
   } catch {
     return [];
   }
 };
 
 export function UserSavedPlacesPanel() {
-  const [favorites, setFavorites] = useState<Parada[]>([]);
+  const [routes, setRoutes] = useState<FavoriteRoute[]>([]);
 
   useEffect(() => {
-    const loadFavorites = () => setFavorites(readStoredFavorites());
+    const loadRoutes = () => setRoutes(readStoredFavoriteRoutes());
 
-    loadFavorites();
-    window.addEventListener('yallego:favorites-updated', loadFavorites);
-    window.addEventListener('storage', loadFavorites);
+    loadRoutes();
+    window.addEventListener('yallego:favorite-routes-updated', loadRoutes);
+    window.addEventListener('storage', loadRoutes);
 
     return () => {
-      window.removeEventListener('yallego:favorites-updated', loadFavorites);
-      window.removeEventListener('storage', loadFavorites);
+      window.removeEventListener('yallego:favorite-routes-updated', loadRoutes);
+      window.removeEventListener('storage', loadRoutes);
     };
   }, []);
 
-  const removeFavorite = (favoriteId: string) => {
-    const nextFavorites = favorites.filter((favorite) => favorite.id !== favoriteId);
-    setFavorites(nextFavorites);
-    window.localStorage.setItem(favoriteStorageKey, JSON.stringify(nextFavorites));
-    window.dispatchEvent(new CustomEvent('yallego:favorites-updated'));
+  const removeFavoriteRoute = (route: FavoriteRoute) => {
+    const nextRoutes = routes.filter(
+      (item) =>
+        item.id !== route.id ||
+        item.driverCode !== route.driverCode ||
+        item.routeName !== route.routeName,
+    );
+
+    setRoutes(nextRoutes);
+    window.localStorage.setItem(favoriteRoutesStorageKey, JSON.stringify(nextRoutes));
+    window.dispatchEvent(new CustomEvent('yallego:favorite-routes-updated'));
   };
 
-  if (favorites.length === 0) {
+  if (routes.length === 0) {
     return (
       <section className="mt-8 rounded-lg border border-dashed border-slate-300 bg-white p-6">
         <div className="grid gap-3 text-slate-600 sm:grid-cols-[auto_1fr_auto] sm:items-center">
@@ -84,17 +63,17 @@ export function UserSavedPlacesPanel() {
             <Heart size={22} />
           </span>
           <div>
-            <h2 className="text-lg font-black text-slate-950">Todavia no hay favoritos</h2>
+            <h2 className="text-lg font-black text-slate-950">Todavia no hay rutas favoritas</h2>
             <p className="mt-1 text-sm font-semibold">
-              Abre el mapa, toca un logo publico y agrega el sitio a favoritos.
+              Toca un bus en el mapa y guarda su ruta para verla aqui.
             </p>
           </div>
           <Link
             href="/user"
             className="inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-slate-950 px-4 text-sm font-black text-white transition hover:bg-cyan-700"
           >
-            <MapPin size={17} />
-            Abrir mapa
+            <BusFront size={17} />
+            Buscar buses
           </Link>
         </div>
       </section>
@@ -105,74 +84,62 @@ export function UserSavedPlacesPanel() {
     <section className="mt-8">
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="rounded-lg border border-slate-200 bg-white p-4">
-          <p className="text-xs font-black uppercase tracking-[0.2em] text-slate-500">Guardados</p>
-          <p className="mt-2 text-3xl font-black text-slate-950">{favorites.length}</p>
+          <p className="text-xs font-black uppercase tracking-[0.2em] text-slate-500">Rutas</p>
+          <p className="mt-2 text-3xl font-black text-slate-950">{routes.length}</p>
         </div>
         <Link
           href="/user"
           className="flex min-h-28 items-center justify-center gap-2 rounded-lg bg-slate-950 p-4 text-sm font-black text-white transition hover:bg-cyan-700"
         >
           <Navigation size={18} />
-          Buscar otro lugar
+          Buscar otra ruta
         </Link>
       </div>
 
       <div className="mt-6 grid gap-3 lg:grid-cols-2">
-        {favorites.map((favorite) => (
-          <article
-            key={favorite.id}
-            className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm transition hover:border-cyan-300"
-          >
-            <div className="flex items-start gap-4">
-              <Link
-                href={`/user?favorite=${encodeURIComponent(favorite.id)}`}
-                className="flex min-w-0 flex-1 items-start gap-4 rounded-lg transition hover:bg-cyan-50"
-              >
-                <span className="grid size-12 shrink-0 place-items-center overflow-hidden rounded-full bg-cyan-100 text-sm font-black text-slate-950 ring-4 ring-slate-100">
-                  {favorite.logoUrl ? (
-                    <Image
-                      src={favorite.logoUrl}
-                      alt=""
-                      width={48}
-                      height={48}
-                      unoptimized
-                      className="h-full w-full object-cover"
-                    />
-                  ) : (
-                    favorite.titulo.slice(0, 2).toUpperCase()
-                  )}
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="block text-xs font-black uppercase tracking-[0.18em] text-cyan-700">
-                    Parada
-                  </span>
-                  <span className="mt-1 block text-lg font-black leading-tight text-slate-950">
-                    {favorite.titulo}
-                  </span>
-                  <span className="mt-2 block text-sm font-semibold leading-6 text-slate-600">
-                    {favorite.descripcion}
-                  </span>
-                </span>
-              </Link>
-              <button
-                type="button"
-                onClick={() => removeFavorite(favorite.id)}
-                className="grid size-10 shrink-0 place-items-center rounded-lg text-rose-600 transition hover:bg-rose-50"
-                aria-label={`Quitar ${favorite.titulo} de favoritos`}
-              >
-                <Heart size={18} fill="currentColor" />
-              </button>
-            </div>
+        {routes.map((route) => {
+          const routeName = route.routeName ?? route.name;
 
-            <Link
-              href={`/user?favorite=${encodeURIComponent(favorite.id)}`}
-              className="mt-4 flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-slate-950 text-sm font-black text-white transition hover:bg-cyan-700"
+          return (
+            <article
+              key={`${route.id}-${route.driverCode ?? routeName}`}
+              className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm transition hover:border-cyan-300"
             >
-              <Navigation size={17} />
-              Como llegar
-            </Link>
-          </article>
-        ))}
+              <div className="flex items-start gap-4">
+                <span className="grid size-12 shrink-0 place-items-center rounded-lg bg-slate-950 text-white">
+                  <BusFront size={22} />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <h3 className="truncate text-lg font-black leading-tight text-slate-950">
+                    {routeName}
+                  </h3>
+                  <p className="mt-1 text-sm font-semibold text-slate-600">
+                    Conductor {route.driverCode ?? 'por asignar'}
+                  </p>
+                  <p className="mt-2 text-xs font-black uppercase tracking-[0.18em] text-slate-500">
+                    $3.800
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => removeFavoriteRoute(route)}
+                  className="grid size-10 shrink-0 place-items-center rounded-lg text-rose-600 transition hover:bg-rose-50"
+                  aria-label={`Quitar ${routeName} de favoritos`}
+                >
+                  <Trash2 size={18} />
+                </button>
+              </div>
+
+              <Link
+                href={`/user?favoriteRoute=${encodeURIComponent(routeName)}`}
+                className="mt-4 flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-slate-950 text-sm font-black text-white transition hover:bg-cyan-700"
+              >
+                <BusFront size={17} />
+                Buscar buses de esta ruta
+              </Link>
+            </article>
+          );
+        })}
       </div>
     </section>
   );
