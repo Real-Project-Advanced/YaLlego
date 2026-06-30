@@ -20,9 +20,7 @@ function getSafeRedirectPath(value: FormDataEntryValue | null, fallback: string)
   return value;
 }
 
-/**
- * Server Action: Login
- */
+// Login action.
 export async function loginAction(formData: FormData) {
   let redirectPath: string | null = null;
 
@@ -62,9 +60,7 @@ export async function loginAction(formData: FormData) {
   redirect(redirectPath);
 }
 
-/**
- * Server Action: Register
- */
+// Register action.
 export async function registerAction(formData: FormData) {
   let redirectPath: string | null = null;
 
@@ -104,9 +100,7 @@ export async function registerAction(formData: FormData) {
   redirect(redirectPath);
 }
 
-/**
- * Server Action: Bootstrap (Initial Super Admin)
- */
+// Bootstrap action.
 export async function bootstrap(formData: FormData) {
   let redirectPath: string | null = null;
 
@@ -146,9 +140,7 @@ export async function bootstrap(formData: FormData) {
   redirect(redirectPath);
 }
 
-/**
- * Server Action: Logout
- */
+// Logout action.
 export async function logoutAction() {
   const { clearAuthCookies } = await import('@/lib/auth');
   await clearAuthCookies();

@@ -4,16 +4,12 @@ import { hashPassword, verifyPassword } from '@/lib/auth';
 import { userRepository } from '../repositories/user.repository';
 import { LoginInput, RegisterInput } from '@/shared/validators';
 
-/**
- * AuthService: Lógica empresarial de autenticación
- */
+// Auth business logic.
 export class AuthService {
-  /**
-   * Login de usuario
-   */
+  // User login.
   async login(input: LoginInput): Promise<OperationResult<{ user: UserPayload }>> {
     try {
-      // Buscar usuario
+      // Find user.
       const user = await userRepository.findByEmail(input.email);
 
       if (!user) {
@@ -30,7 +26,7 @@ export class AuthService {
         };
       }
 
-      // Verificar contraseña
+      // Check password.
       const isValidPassword = await verifyPassword(input.password, user.password);
       if (!isValidPassword) {
         return {
@@ -39,7 +35,7 @@ export class AuthService {
         };
       }
 
-      // Preparar payload del usuario
+      // Build payload.
       const userPayload: UserPayload = {
         id: user.id,
         email: user.email,
@@ -60,12 +56,10 @@ export class AuthService {
     }
   }
 
-  /**
-   * Registro de usuario
-   */
+  // User register.
   async register(input: RegisterInput): Promise<OperationResult<{ user: UserPayload }>> {
     try {
-      // Verificar si el email ya existe
+      // Check email.
       const existingUser = await userRepository.findByEmail(input.email);
       if (existingUser) {
         return {
@@ -74,10 +68,10 @@ export class AuthService {
         };
       }
 
-      // Hash de contraseña
+      // Hash password.
       const hashedPassword = await hashPassword(input.password);
 
-      // Crear usuario
+      // Create user.
       const user = await userRepository.create({
         fullname: input.name,
         email: input.email,
@@ -85,7 +79,7 @@ export class AuthService {
         role: UserRole.USER,
       });
 
-      // Preparar payload del usuario
+      // Build payload.
       const userPayload: UserPayload = {
         id: user.id,
         email: user.email,
@@ -106,9 +100,7 @@ export class AuthService {
     }
   }
 
-  /**
-   * Crear SUPER_ADMIN (Bootstrap)
-   */
+  // Create super admin.
   async createSuperAdmin(input: {
     fullname: string;
     email: string;
@@ -117,7 +109,7 @@ export class AuthService {
     document_number?: string;
   }): Promise<OperationResult<UserPayload>> {
     try {
-      // Verificar si ya existe un SUPER_ADMIN
+      // Check super admin.
       const hasSuperAdmin = await userRepository.hasSuperAdmin();
       if (hasSuperAdmin) {
         return {
@@ -126,7 +118,7 @@ export class AuthService {
         };
       }
 
-      // Verificar si el email existe
+      // Check email.
       const existingUser = await userRepository.findByEmail(input.email);
       if (existingUser) {
         return {
@@ -135,10 +127,10 @@ export class AuthService {
         };
       }
 
-      // Hash de contraseña
+      // Hash password.
       const hashedPassword = await hashPassword(input.password);
 
-      // Crear SUPER_ADMIN
+      // Create super admin.
       const user = await userRepository.create({
         fullname: input.fullname,
         email: input.email,
@@ -170,5 +162,5 @@ export class AuthService {
   }
 }
 
-// Instancia del servicio
+// Service instance.
 export const authService = new AuthService();
