@@ -1,5 +1,6 @@
 import { getCurrentUser } from '@/lib/auth';
 import { redirect } from 'next/navigation';
+import DriverTrackingStatus from './DriverTrackingStatus';
 
 export default async function DriverDashboardPage() {
   const user = await getCurrentUser();

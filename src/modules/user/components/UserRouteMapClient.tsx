@@ -7,6 +7,8 @@ import { MapContainer, Marker, Polyline, Popup, TileLayer, useMap } from 'react-
 
 import 'leaflet/dist/leaflet.css';
 import { medellinBounds } from '@/lib/maps/medellin-bounds';
+import { useLiveBuses } from '@/hooks/useLiveBuses';
+import type { UserRoute } from '../data/user-dashboard.data';
 import { getStopLogoOption, type Parada, type SearchRouteResult } from './UserRouteMapShared';
 
 type UserRouteMapClientProps = {
@@ -153,7 +155,7 @@ export default function UserRouteMapClient({
   };
 
   return (
-    <div className="relative z-0 h-full min-h-[360px] overflow-hidden bg-[#dff7f4]">
+    <div className="relative z-0 h-full min-h-90 overflow-hidden bg-[#dff7f4]">
       <MapContainer
         center={[6.2442, -75.5812]}
         zoom={12}
@@ -246,7 +248,7 @@ export default function UserRouteMapClient({
                 }}
               >
                 <article
-                  className="w-[300px] overflow-hidden rounded-lg border border-cyan-100 bg-white text-slate-950 shadow-2xl shadow-cyan-950/20"
+                  className="w-90 overflow-hidden rounded-lg border border-cyan-100 bg-white text-slate-950 shadow-2xl shadow-cyan-950/20"
                   style={{
                     transform: `translate(${popupOffset.x}px, ${popupOffset.y}px)`,
                   }}
@@ -314,7 +316,7 @@ export default function UserRouteMapClient({
         })}
       </MapContainer>
 
-      <div className="pointer-events-none absolute inset-0 z-[1] bg-[linear-gradient(180deg,rgba(255,255,255,0.10),rgba(255,255,255,0)_24%,rgba(8,145,178,0.08))]" />
+      <div className="pointer-events-none absolute inset-0 z-1 bg-[linear-gradient(180deg,rgba(255,255,255,0.10),rgba(255,255,255,0)_24%,rgba(8,145,178,0.08))]" />
 
       <style jsx global>{`
         .route-glow {
