@@ -50,22 +50,43 @@ function getPostLoginPath(role: string) {
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  const publicRoutes = ['/', '/login', '/register', '/bootstrap', '/status', '/temp-dashboard'];
+  const publicRoutes = [
+    '/',
+    '/login',
+    '/register',
+    '/bootstrap',
+    '/status',
+    '/temp-dashboard',
+    '/unauthorized',
+  ];
   const isPublicRoute = publicRoutes.includes(pathname);
   const isAuthRoute = pathname === '/login' || pathname === '/register';
+  const isForceLogin = request.nextUrl.searchParams.get('force') === 'true';
   const accessToken = request.cookies.get('accessToken')?.value;
   const refreshToken = request.cookies.get('refreshToken')?.value;
 
   let user = accessToken ? await verifyToken(accessToken, secret) : null;
 
   if (isPublicRoute) {
-    if (isAuthRoute && user) {
+    if (isAuthRoute && user && !isForceLogin) {
       return NextResponse.redirect(new URL(getPostLoginPath(user.role), request.url));
+    }
+
+    if (isAuthRoute && user && isForceLogin) {
+      const response = NextResponse.next();
+      response.cookies.delete('accessToken');
+      response.cookies.delete('refreshToken');
+      return response;
     }
 
     return NextResponse.next();
   }
-
+  if (isPublicRoute) {
+    if (isAuthRoute && user) {
+      return NextResponse.redirect(new URL(getPostLoginPath(user.role), request.url));
+    }
+    return NextResponse.next();
+  }
   if (!user) {
     user = refreshToken ? await verifyToken(refreshToken, refreshSecret) : null;
 
@@ -91,6 +112,15 @@ export async function middleware(request: NextRequest) {
     });
 
     return response;
+  }
+
+  // Role-based route protection: redirect to /unauthorized when role mismatches
+  if (pathname.startsWith('/admin') && user.role !== 'SUPER_ADMIN') {
+    return NextResponse.redirect(new URL('/unauthorized', request.url));
+  }
+
+  if (pathname.startsWith('/driver') && user.role !== 'DRIVER') {
+    return NextResponse.redirect(new URL('/unauthorized', request.url));
   }
 
   return NextResponse.next();

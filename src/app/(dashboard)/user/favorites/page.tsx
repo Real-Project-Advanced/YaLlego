@@ -1,4 +1,5 @@
 import { getCurrentUser } from '@/lib/auth';
+import { UserSavedPlacesPanel } from '@/modules/user/components/UserSavedPlacesPanel';
 import { redirect } from 'next/navigation';
 
 export default async function FavoritesPage() {
@@ -10,14 +11,11 @@ export default async function FavoritesPage() {
 
   return (
     <main className="min-h-screen bg-slate-50">
-      <div className="max-w-7xl mx-auto p-6">
-        <h1 className="text-4xl font-black text-slate-950 mb-2">Favorite Routes</h1>
-        <p className="text-slate-600">Quick access to your saved routes</p>
+      <div className="mx-auto max-w-7xl p-6">
+        <h1 className="mb-2 text-4xl font-black text-slate-950">Rutas Favoritas</h1>
+        <p className="text-slate-600">Acceso rapido a tus lugares y rutas guardadas</p>
 
-        {/* Placeholder for favorites content */}
-        <div className="mt-8 bg-white rounded-lg shadow p-6">
-          <p className="text-slate-600">Your favorite routes will appear here.</p>
-        </div>
+        <UserSavedPlacesPanel />
       </div>
     </main>
   );
