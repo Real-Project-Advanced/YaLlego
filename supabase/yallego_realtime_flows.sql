@@ -67,6 +67,20 @@ create table if not exists push_notifications (
   created_at timestamptz default now()
 );
 
+alter table driver_locations replica identity full;
+alter table ride_requests replica identity full;
+alter table driver_routes replica identity full;
+alter table user_favorite_routes replica identity full;
+alter table push_notifications replica identity full;
+
+grant usage on schema public to anon, authenticated;
+grant select, insert, update, delete on table driver_locations to anon, authenticated;
+grant select, insert, update, delete on table ride_requests to anon, authenticated;
+grant select, insert, update, delete on table user_favorite_routes to anon, authenticated;
+grant select, insert, update, delete on table driver_routes to anon, authenticated;
+grant select, insert, update, delete on table push_tokens to anon, authenticated;
+grant select, insert, update, delete on table push_notifications to anon, authenticated;
+
 do $$
 begin
   alter publication supabase_realtime add table driver_locations;
@@ -80,3 +94,26 @@ begin
 exception
   when duplicate_object then null;
 end $$;
+
+do $$
+begin
+  alter publication supabase_realtime add table driver_routes;
+exception
+  when duplicate_object then null;
+end $$;
+
+do $$
+begin
+  alter publication supabase_realtime add table user_favorite_routes;
+exception
+  when duplicate_object then null;
+end $$;
+
+do $$
+begin
+  alter publication supabase_realtime add table push_notifications;
+exception
+  when duplicate_object then null;
+end $$;
+
+notify pgrst, 'reload schema';

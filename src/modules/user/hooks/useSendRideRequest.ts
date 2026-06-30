@@ -33,7 +33,8 @@ export function useSendRideRequest() {
 
   const sendRideRequest = useCallback(
     async ({ driver, nearestStop, route, user }: SendRideRequestInput) => {
-      const driverId = driver.driverId ?? getDriverIdFromCode(driver.driverCode);
+      const driverId =
+        driver.driverId ?? getDriverIdFromCode(driver.driverCode) ?? driver.driverCode;
 
       if (!driverId) {
         setError('No pude identificar el conductor seleccionado.');

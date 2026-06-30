@@ -1,8 +1,9 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import type { ActiveDriverLocation } from '../components/UserRouteMapShared';
+import { useLiveBuses, type LiveBus } from '@/hooks/useLiveBuses';
 import {
   isMissingSupabaseTableError,
   readLocalDriverLocations,
@@ -49,11 +50,72 @@ const isDriverLocationsUnavailable = (error: { code?: string; message?: string }
   error.code === 'PGRST205' ||
   isMissingSupabaseTableError(error.message ?? '');
 
+const getLiveBusCode = (bus: LiveBus) => bus.plate || `B-${bus.id}`;
+
+const getLiveBusRouteName = (bus: LiveBus) => {
+  if (bus.routeName) return bus.routeName;
+  if (bus.routeId) return `Ruta #${bus.routeId}`;
+  if (bus.model) return `Bus ${bus.model}`;
+  return 'Bus activo';
+};
+
+const liveBusToActiveDriver = (bus: LiveBus): ActiveDriverLocation => {
+  const busId = Number(bus.id);
+
+  return {
+    driverId: Number.isFinite(busId) && busId > 0 ? busId : null,
+    driverCode: getLiveBusCode(bus),
+    routeName: getLiveBusRouteName(bus),
+    lat: bus.location.lat,
+    lng: bus.location.lng,
+    price: 3800,
+    trackingOnly: true,
+  };
+};
+
+const liveBusToDriverLocation = (bus: LiveBus): DriverLocation => ({
+  id: `go-tracking-${bus.id}`,
+  driver_id: bus.id,
+  driver_code: getLiveBusCode(bus),
+  route_name: getLiveBusRouteName(bus),
+  lat: bus.location.lat,
+  lng: bus.location.lng,
+  is_active: true,
+  updated_at: new Date().toISOString(),
+});
+
+const mergeByCode = <T extends { driverCode: string }>(remoteItems: T[], liveItems: T[]) => {
+  const remoteCodes = new Set(remoteItems.map((item) => item.driverCode));
+
+  return [...remoteItems, ...liveItems.filter((item) => !remoteCodes.has(item.driverCode))];
+};
+
+const mergeLocationsByCode = (remoteItems: DriverLocation[], liveItems: DriverLocation[]) => {
+  const remoteCodes = new Set(remoteItems.map((item) => item.driver_code));
+
+  return [...remoteItems, ...liveItems.filter((item) => !remoteCodes.has(item.driver_code))];
+};
+
+const localDriversToLocations = (drivers: ActiveDriverLocation[]): DriverLocation[] =>
+  drivers.map((driver) => ({
+    id: `local-${driver.driverCode}`,
+    driver_id: String(driver.driverId ?? getDriverIdFromCode(driver.driverCode) ?? ''),
+    driver_code: driver.driverCode,
+    route_name: driver.routeName,
+    lat: driver.lat,
+    lng: driver.lng,
+    is_active: true,
+    updated_at: new Date().toISOString(),
+  }));
+
 export function useDriverLocations() {
+  const liveBuses = useLiveBuses();
   const [drivers, setDrivers] = useState<ActiveDriverLocation[]>([]);
   const [driverLocations, setDriverLocations] = useState<DriverLocation[]>([]);
   const [error, setError] = useState('');
   const [tableExists, setTableExists] = useState(true);
+  const liveDrivers = useMemo(() => liveBuses.map(liveBusToActiveDriver), [liveBuses]);
+  const liveDriverLocations = useMemo(() => liveBuses.map(liveBusToDriverLocation), [liveBuses]);
 
   const loadDrivers = useCallback(async () => {
     if (!tableExists) return;
@@ -68,7 +130,12 @@ export function useDriverLocations() {
 
       if (locationError) {
         if (isDriverLocationsUnavailable(locationError)) {
+          const localDrivers = readLocalDriverLocations();
           setTableExists(false);
+          setDrivers(localDrivers);
+          setDriverLocations(localDriversToLocations(localDrivers));
+          setError('');
+          return;
         }
 
         console.warn('driver_locations unavailable:', locationError.message);
@@ -163,7 +230,19 @@ export function useDriverLocations() {
   }, [tableExists]);
 
   useEffect(() => {
-    if (!tableExists) return;
+    if (!tableExists) {
+      const syncLocalDrivers = () => {
+        const localDrivers = readLocalDriverLocations();
+        setDrivers(localDrivers);
+        setDriverLocations(localDriversToLocations(localDrivers));
+      };
+
+      syncLocalDrivers();
+      window.addEventListener('yallego:yallego.local.driverLocations', syncLocalDrivers);
+      return () => {
+        window.removeEventListener('yallego:yallego.local.driverLocations', syncLocalDrivers);
+      };
+    }
 
     const loadTimer = window.setTimeout(() => {
       void loadDrivers();
@@ -192,5 +271,16 @@ export function useDriverLocations() {
     };
   }, [loadDrivers, tableExists]);
 
-  return { drivers, driverLocations, error, reload: loadDrivers };
+  const mergedDrivers = useMemo(() => mergeByCode(drivers, liveDrivers), [drivers, liveDrivers]);
+  const mergedDriverLocations = useMemo(
+    () => mergeLocationsByCode(driverLocations, liveDriverLocations),
+    [driverLocations, liveDriverLocations],
+  );
+
+  return {
+    drivers: mergedDrivers,
+    driverLocations: mergedDriverLocations,
+    error,
+    reload: loadDrivers,
+  };
 }

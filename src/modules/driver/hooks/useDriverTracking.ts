@@ -10,6 +10,19 @@ import {
   upsertLocalDriverLocation,
 } from '@/modules/shared/services/localRealtimeFallback';
 
+const getTrackingWebSocketBase = () => {
+  if (process.env.NEXT_PUBLIC_TRACKING_WS_URL) return process.env.NEXT_PUBLIC_TRACKING_WS_URL;
+
+  const goTrackingURL = process.env.NEXT_PUBLIC_GO_TRACKING_URL;
+  if (goTrackingURL) {
+    return goTrackingURL.replace(/^http/, 'ws').replace(/\/$/, '');
+  }
+
+  return null;
+};
+
+const trackingWebSocketBase = getTrackingWebSocketBase();
+
 export type DriverPosition = {
   lat: number;
   lng: number;
@@ -70,14 +83,72 @@ export function useDriverTracking({ driverCode, driverId, routeName }: UseDriver
   const [tableExists, setTableExists] = useState(true);
   const intervalRef = useRef<number | null>(null);
   const tableExistsRef = useRef(true);
+  const trackingSocketRef = useRef<WebSocket | null>(null);
+  const trackingSocketTokenRef = useRef('');
 
   useEffect(() => {
     tableExistsRef.current = tableExists;
   }, [tableExists]);
 
+  const closeTrackingSocket = useCallback(() => {
+    trackingSocketRef.current?.close();
+    trackingSocketRef.current = null;
+  }, []);
+
+  const sendPositionToTrackingSocket = useCallback(async (position: DriverPosition) => {
+    if (!trackingWebSocketBase) return;
+    if (typeof WebSocket === 'undefined') return;
+
+    let socket = trackingSocketRef.current;
+    const needsNewSocket =
+      !socket || socket.readyState === WebSocket.CLOSED || socket.readyState === WebSocket.CLOSING;
+
+    if (needsNewSocket) {
+      try {
+        if (!trackingSocketTokenRef.current) {
+          const response = await fetch('/api/auth/token');
+          if (!response.ok) return;
+
+          const payload = (await response.json()) as { token?: string };
+          trackingSocketTokenRef.current = payload.token ?? '';
+        }
+
+        if (!trackingSocketTokenRef.current) return;
+
+        socket = new WebSocket(
+          `${trackingWebSocketBase}/ws/driver?token=${encodeURIComponent(
+            trackingSocketTokenRef.current,
+          )}`,
+        );
+        trackingSocketRef.current = socket;
+        socket.onclose = () => {
+          if (trackingSocketRef.current === socket) {
+            trackingSocketRef.current = null;
+          }
+        };
+      } catch {
+        return;
+      }
+    }
+
+    const payload = JSON.stringify({ lat: position.lat, lng: position.lng });
+
+    if (socket.readyState === WebSocket.OPEN) {
+      socket.send(payload);
+      return;
+    }
+
+    if (socket.readyState === WebSocket.CONNECTING) {
+      const currentSocket = socket;
+      const sendWhenOpen = () => currentSocket.send(payload);
+      currentSocket.addEventListener('open', sendWhenOpen, { once: true });
+    }
+  }, []);
+
   const publishPosition = useCallback(async () => {
     const nextPosition = await getCurrentPosition();
     setPosition(nextPosition);
+    void sendPositionToTrackingSocket(nextPosition);
 
     if (!tableExistsRef.current) {
       upsertLocalDriverLocation({
@@ -106,7 +177,7 @@ export function useDriverTracking({ driverCode, driverId, routeName }: UseDriver
     );
 
     if (upsertError) {
-      if (isMissingSupabaseTableError(upsertError.message)) {
+      if (isMissingSupabaseTableError(`${upsertError.code ?? ''} ${upsertError.message}`)) {
         setTableExists(false);
         upsertLocalDriverLocation({
           driverId,
@@ -125,7 +196,7 @@ export function useDriverTracking({ driverCode, driverId, routeName }: UseDriver
     }
 
     setError('');
-  }, [driverCode, driverId, routeName]);
+  }, [driverCode, driverId, routeName, sendPositionToTrackingSocket]);
 
   const stopTracking = useCallback(async () => {
     if (intervalRef.current) {
@@ -133,6 +204,7 @@ export function useDriverTracking({ driverCode, driverId, routeName }: UseDriver
       intervalRef.current = null;
     }
 
+    closeTrackingSocket();
     setIsActive(false);
     setError('');
 
@@ -148,7 +220,10 @@ export function useDriverTracking({ driverCode, driverId, routeName }: UseDriver
 
     deactivateLocalDriverLocation(driverCode);
 
-    if (updateError && isMissingSupabaseTableError(updateError.message)) {
+    if (
+      updateError &&
+      isMissingSupabaseTableError(`${updateError.code ?? ''} ${updateError.message}`)
+    ) {
       setTableExists(false);
       return;
     }
@@ -156,7 +231,7 @@ export function useDriverTracking({ driverCode, driverId, routeName }: UseDriver
     if (updateError) {
       setError(updateError.message);
     }
-  }, [driverCode]);
+  }, [closeTrackingSocket, driverCode]);
 
   const startTracking = useCallback(async () => {
     setError('');
@@ -193,6 +268,7 @@ export function useDriverTracking({ driverCode, driverId, routeName }: UseDriver
   useEffect(() => {
     return () => {
       if (intervalRef.current) window.clearInterval(intervalRef.current);
+      closeTrackingSocket();
       if (tableExistsRef.current) {
         void supabase
           .from('driver_locations')
@@ -201,7 +277,7 @@ export function useDriverTracking({ driverCode, driverId, routeName }: UseDriver
       }
       deactivateLocalDriverLocation(driverCode);
     };
-  }, [driverCode]);
+  }, [closeTrackingSocket, driverCode]);
 
   return {
     error,

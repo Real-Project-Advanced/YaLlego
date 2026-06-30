@@ -6,6 +6,7 @@ import (
 
 	"github.com/Real-Project-Advanced/YaLlego/go-tracking/internal/config"
 	"github.com/Real-Project-Advanced/YaLlego/go-tracking/internal/db"
+	"github.com/Real-Project-Advanced/YaLlego/go-tracking/internal/navigation"
 	"github.com/Real-Project-Advanced/YaLlego/go-tracking/internal/ws"
 	"github.com/joho/godotenv"
 )
@@ -27,8 +28,10 @@ func main() {
 
 	hub := ws.NewHub(database)
 	handler := ws.NewHandler(hub, database, cfg.JWTSecret)
+	navigationHandler := navigation.NewHandler(cfg.OSRMBaseURL, cfg.NominatimBaseURL)
 
 	mux := http.NewServeMux()
+	mux.HandleFunc("/navigation/route", navigationHandler.ServeRoute)
 	mux.HandleFunc("/ws/passenger", handler.ServePassenger)
 	mux.HandleFunc("/ws/driver", handler.ServeDriver)
 	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {

@@ -6,6 +6,7 @@ import { Bell, BusFront, Gauge, LogOut, UserRound } from 'lucide-react';
 import type { UserPayload } from '@/lib/auth';
 import { BottomSheet } from '@/modules/user/components/BottomSheet';
 import { supabase } from '@/lib/supabase';
+import { isMissingSupabaseTableError } from '@/modules/shared/services/localRealtimeFallback';
 import { DriverBanner } from './DriverBanner';
 import { DriverFabMenu, type DriverSheetKey } from './DriverFabMenu';
 import { DriverRouteMap } from './DriverRouteMap';
@@ -97,6 +98,8 @@ export function DriverDashboard({ profile, user }: DriverDashboardProps) {
     () => routes.find((route) => route.name === selectedRouteName) ?? routes[0] ?? profile.route,
     [profile.route, routes, selectedRouteName],
   );
+  const automaticDistanceKm = trackingDistance || selectedRoute.distanceKm;
+  const automaticEstimatedDuration = estimateMinutes(automaticDistanceKm);
 
   const tracking = useDriverTracking({
     driverId: profile.driverId,
@@ -250,15 +253,25 @@ export function DriverDashboard({ profile, user }: DriverDashboardProps) {
         driver_id: String(profile.driverId),
         driver_code: profile.driverCode,
         route_name: selectedRoute.name,
-        estimated_duration: estimatedDuration ? Number(estimatedDuration) : null,
-        total_distance: trackingDistance || selectedRoute.distanceKm,
+        estimated_duration: automaticEstimatedDuration,
+        total_distance: automaticDistanceKm,
         price: 3800,
         updated_at: new Date().toISOString(),
       },
       { onConflict: 'driver_id' },
     );
 
-    setSaveMessage(error ? error.message : 'Datos guardados.');
+    if (error) {
+      if (isMissingSupabaseTableError(`${error.code ?? ''} ${error.message}`)) {
+        setSaveMessage('Datos guardados en este dispositivo.');
+        return;
+      }
+
+      setSaveMessage(error.message);
+      return;
+    }
+
+    setSaveMessage('Datos guardados.');
   };
 
   return (
@@ -339,14 +352,16 @@ export function DriverDashboard({ profile, user }: DriverDashboardProps) {
           </div>
         )}
 
-        <DriverFabMenu
-          activeItem={activeSheet}
-          isActiveRoute={tracking.isActive}
-          isOpen={isFabOpen}
-          pendingRequests={rideRequests.pendingRequests.length}
-          onSelect={handleFabSelect}
-          onToggle={() => setIsFabOpen((current) => !current)}
-        />
+        {!activeSheet && (
+          <DriverFabMenu
+            activeItem={activeSheet}
+            isActiveRoute={tracking.isActive}
+            isOpen={isFabOpen}
+            pendingRequests={rideRequests.pendingRequests.length}
+            onSelect={handleFabSelect}
+            onToggle={() => setIsFabOpen((current) => !current)}
+          />
+        )}
 
         <BottomSheet
           open={Boolean(activeSheet)}
@@ -441,9 +456,9 @@ export function DriverDashboard({ profile, user }: DriverDashboardProps) {
                 <input
                   type="number"
                   min="1"
-                  value={estimatedDuration}
-                  onChange={(event) => setEstimatedDuration(event.target.value)}
-                  className="mt-2 h-12 w-full rounded-lg border border-slate-200 px-3 text-sm font-bold outline-none focus:border-[#0369a1]"
+                  value={automaticEstimatedDuration}
+                  readOnly
+                  className="mt-2 h-12 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm font-bold text-slate-950 outline-none"
                 />
               </label>
               <div className="grid grid-cols-2 gap-3">
@@ -452,7 +467,7 @@ export function DriverDashboard({ profile, user }: DriverDashboardProps) {
                     Distancia
                   </p>
                   <p className="mt-2 text-lg font-black text-slate-950">
-                    {formatKm(trackingDistance || selectedRoute.distanceKm)} km
+                    {formatKm(automaticDistanceKm)} km
                   </p>
                 </div>
                 <div className="rounded-lg bg-slate-50 p-3">

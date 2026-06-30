@@ -69,6 +69,7 @@ export type ActiveDriverLocation = {
   totalDistance?: number | null;
   price?: number | null;
   isHighlighted?: boolean;
+  trackingOnly?: boolean;
 };
 
 export const stopLogoOptions: Array<{

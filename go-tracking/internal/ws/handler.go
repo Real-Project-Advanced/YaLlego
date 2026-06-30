@@ -72,18 +72,21 @@ func (h *Handler) ServeDriver(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var routeID *int
+	routeName := ""
 	if route, err := h.db.GetRouteByTransportID(*driver.TransportID); err != nil {
 		log.Printf("route lookup (transport_id=%d): %v", *driver.TransportID, err)
 	} else if route != nil {
 		routeID = &route.ID
+		routeName = fmt.Sprintf("%s -> %s", route.Origin, route.Destination)
 	}
 
 	bus := &models.Bus{
-		ID:       fmt.Sprintf("%d", transport.ID),
-		Plate:    transport.Plate,
-		Model:    transport.Model,
-		Capacity: transport.Capacity,
-		RouteID:  routeID,
+		ID:        fmt.Sprintf("%d", transport.ID),
+		Plate:     transport.Plate,
+		Model:     transport.Model,
+		Capacity:  transport.Capacity,
+		RouteID:   routeID,
+		RouteName: routeName,
 	}
 
 	conn, err := upgrader.Upgrade(w, r, nil)

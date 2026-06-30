@@ -49,7 +49,8 @@ type Bus struct {
 	Model    string   `json:"model"`
 	Capacity int      `json:"capacity"`
 	Location Location `json:"location"`
-	RouteID  *int     `json:"routeId,omitempty"`
+	RouteID   *int    `json:"routeId,omitempty"`
+	RouteName string  `json:"routeName,omitempty"`
 }
 
 // GPSUpdate is the message a driver sends to the service.

@@ -175,6 +175,19 @@ const formatDistance = (distanceKm: number) =>
 const formatDuration = (durationMinutes: number) =>
   new Intl.NumberFormat('es-CO', { maximumFractionDigits: 0 }).format(durationMinutes);
 
+const currentLocationAliases = new Set([
+  '',
+  'mi ubicacion',
+  'mi ubicacion actual',
+  'mi ubicación',
+  'mi ubicación actual',
+  'origen o mi ubicacion',
+  'origen o mi ubicación',
+]);
+
+const shouldUseCurrentLocationAsOrigin = (value: string) =>
+  currentLocationAliases.has(value.trim().toLowerCase());
+
 const distanceInKm = (a: { lat: number; lng: number }, b: { lat: number; lng: number }) => {
   const radiusKm = 6371;
   const toRad = (value: number) => (value * Math.PI) / 180;
@@ -472,7 +485,6 @@ export function UserRouteSearch({ user, visiblePanels, onTogglePanel }: UserRout
   const routedFavoriteIdRef = useRef('');
   const searchParams = useSearchParams();
   const favoriteToRouteId = searchParams.get('favorite');
-  const favoriteRouteName = searchParams.get('favoriteRoute');
   const driverLocations = useDriverLocations();
   const sendRideRequest = useSendRideRequest();
   const rideRequestStatus = useRideRequestStatus(currentRideRequestId);
@@ -482,22 +494,18 @@ export function UserRouteSearch({ user, visiblePanels, onTogglePanel }: UserRout
   const nearbyDrivers = useMemo(() => {
     if (!selectedRoute) return driverLocations.drivers;
 
-    return [...driverLocations.drivers]
-      .filter((driver) => !favoriteRouteName || driver.routeName === favoriteRouteName)
-      .map((driver) => ({
+    return driverLocations.drivers.map((driver) => {
+      const distanceFromOrigin = distanceInKm(selectedRoute.startPoint, {
+        lat: driver.lat,
+        lng: driver.lng,
+      });
+
+      return {
         ...driver,
-        distanceFromOrigin: distanceInKm(selectedRoute.startPoint, {
-          lat: driver.lat,
-          lng: driver.lng,
-        }),
-      }))
-      .filter((driver) => driver.distanceFromOrigin <= 18)
-      .sort((a, b) => a.distanceFromOrigin - b.distanceFromOrigin)
-      .map(({ distanceFromOrigin: _distanceFromOrigin, ...driver }) => ({
-        ...driver,
-        isHighlighted: true,
-      }));
-  }, [driverLocations.drivers, favoriteRouteName, selectedRoute]);
+        isHighlighted: distanceFromOrigin <= 18,
+      };
+    });
+  }, [driverLocations.drivers, selectedRoute]);
   const routeStopsNearDriverRoute = useMemo(() => {
     if (!selectedRoute || !selectedDriver) return [];
 
@@ -799,7 +807,13 @@ export function UserRouteSearch({ user, visiblePanels, onTogglePanel }: UserRout
 
   const getCurrentLocationPlace = useCallback(async () => {
     const coords = await getCurrentCoordinates();
-    const address = await reverseGeocodeCoordinates(coords.latitude, coords.longitude);
+    let address = 'Mi ubicacion actual';
+
+    try {
+      address = await reverseGeocodeCoordinates(coords.latitude, coords.longitude);
+    } catch {
+      address = 'Mi ubicacion actual';
+    }
 
     return {
       name: address,
@@ -904,18 +918,23 @@ export function UserRouteSearch({ user, visiblePanels, onTogglePanel }: UserRout
 
     const cleanOrigin = origin.trim();
     const cleanDestination = destination.trim();
+    const useGpsOrigin = shouldUseCurrentLocationAsOrigin(cleanOrigin);
 
-    if (!cleanOrigin || !cleanDestination) {
-      setError('Escribe origen y destino para buscar una ruta.');
+    if (!cleanDestination) {
+      setError('Escribe a donde quieres ir para buscar una ruta.');
       return;
     }
 
     setError('');
     setIsSearching(true);
+    setIsLocating((current) => current || useGpsOrigin);
 
     try {
-      const originPlacePromise =
-        currentOriginPlace && cleanOrigin === currentOriginPlace.name
+      const originPlacePromise = useGpsOrigin
+        ? currentOriginPlace
+          ? Promise.resolve(currentOriginPlace)
+          : getCurrentLocationPlace()
+        : currentOriginPlace && cleanOrigin === currentOriginPlace.name
           ? Promise.resolve(currentOriginPlace)
           : geocodePlace(cleanOrigin);
 
@@ -934,6 +953,13 @@ export function UserRouteSearch({ user, visiblePanels, onTogglePanel }: UserRout
         coordinates: route.coordinates,
       };
 
+      if (useGpsOrigin) {
+        setCurrentOriginPlace(originPlace);
+        setOrigin(originPlace.name);
+      } else {
+        setCurrentOriginPlace(null);
+      }
+
       setRoutes([nextRoute]);
       setSelectedRouteId(nextRoute.id);
       setSelectedDriver(null);
@@ -945,6 +971,7 @@ export function UserRouteSearch({ user, visiblePanels, onTogglePanel }: UserRout
       setError(searchError instanceof Error ? searchError.message : 'No pude buscar esa ruta.');
     } finally {
       setIsSearching(false);
+      setIsLocating(false);
     }
   };
 
@@ -979,6 +1006,7 @@ export function UserRouteSearch({ user, visiblePanels, onTogglePanel }: UserRout
         <UserRouteMap
           routes={routes}
           selectedRouteId={selectedRouteId}
+          currentLocation={currentOriginPlace}
           onSelectRoute={setSelectedRouteId}
           paradas={paradas}
           onToggleFavoriteParada={toggleFavoriteParada}

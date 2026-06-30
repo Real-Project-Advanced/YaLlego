@@ -25,6 +25,7 @@ export default function MapView() {
           maxZoom={18}
           maxBounds={medellinBounds}
           maxBoundsViscosity={1.0}
+          zoomControl={false}
           style={{
             height: '100%',
             width: '100%',

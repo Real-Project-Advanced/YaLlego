@@ -22,10 +22,19 @@ export type UserRideRequest = {
 export function useRideRequestStatus(requestId: string | null) {
   const [request, setRequest] = useState<UserRideRequest | null>(null);
   const [error, setError] = useState('');
+  const [tableExists, setTableExists] = useState(true);
 
   const loadRequest = useCallback(async () => {
     if (!requestId) {
       setRequest(null);
+      return;
+    }
+
+    if (!tableExists) {
+      setRequest(
+        (readLocalRideRequests().find((item) => item.id === requestId) as UserRideRequest) ?? null,
+      );
+      setError('');
       return;
     }
 
@@ -36,7 +45,8 @@ export function useRideRequestStatus(requestId: string | null) {
       .single();
 
     if (requestError) {
-      if (isMissingSupabaseTableError(requestError.message)) {
+      if (isMissingSupabaseTableError(`${requestError.code ?? ''} ${requestError.message}`)) {
+        setTableExists(false);
         setRequest(
           (readLocalRideRequests().find((item) => item.id === requestId) as UserRideRequest) ??
             null,
@@ -51,10 +61,16 @@ export function useRideRequestStatus(requestId: string | null) {
 
     setRequest(data as UserRideRequest);
     setError('');
-  }, [requestId]);
+  }, [requestId, tableExists]);
 
   const completeRequest = useCallback(async () => {
     if (!requestId) return false;
+
+    if (!tableExists) {
+      updateLocalRideRequestStatus(requestId, 'completed');
+      setRequest((current) => (current ? { ...current, status: 'completed' } : current));
+      return true;
+    }
 
     const { error: updateError } = await supabase
       .from('ride_requests')
@@ -62,7 +78,9 @@ export function useRideRequestStatus(requestId: string | null) {
       .eq('id', requestId);
 
     if (updateError) {
-      if (!isMissingSupabaseTableError(updateError.message)) {
+      if (isMissingSupabaseTableError(`${updateError.code ?? ''} ${updateError.message}`)) {
+        setTableExists(false);
+      } else {
         setError(updateError.message);
         return false;
       }
@@ -71,7 +89,7 @@ export function useRideRequestStatus(requestId: string | null) {
     updateLocalRideRequestStatus(requestId, 'completed');
     setRequest((current) => (current ? { ...current, status: 'completed' } : current));
     return true;
-  }, [requestId]);
+  }, [requestId, tableExists]);
 
   useEffect(() => {
     const loadTimer = window.setTimeout(() => {
@@ -82,7 +100,7 @@ export function useRideRequestStatus(requestId: string | null) {
   }, [loadRequest]);
 
   useEffect(() => {
-    if (!requestId) return;
+    if (!requestId || !tableExists) return;
 
     const channel = supabase
       .channel(`user-ride-request-${requestId}`)
@@ -110,7 +128,7 @@ export function useRideRequestStatus(requestId: string | null) {
       window.clearInterval(interval);
       void supabase.removeChannel(channel);
     };
-  }, [requestId]);
+  }, [requestId, tableExists]);
 
   return { completeRequest, error, request };
 }

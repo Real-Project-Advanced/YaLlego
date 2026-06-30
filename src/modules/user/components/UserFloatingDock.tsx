@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { Bell, Bot, Heart, History, MapPinned, PanelRightClose, UserRound } from 'lucide-react';
 import type { UserPayload } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
+import { isMissingSupabaseTableError } from '@/modules/shared/services/localRealtimeFallback';
 import { UserChatbotPanel } from './UserChatbotPanel';
 import type { Parada, SearchRouteResult } from './UserRouteMapShared';
 
@@ -138,13 +139,26 @@ export function UserFloatingDock({ user }: UserFloatingDockProps) {
   }, []);
 
   useEffect(() => {
+    let tableExists = true;
+
     const loadHistory = async () => {
-      const { data } = await supabase
+      if (!tableExists) return;
+
+      const { data, error } = await supabase
         .from('ride_requests')
         .select('id, route_name, driver_code, status, created_at')
         .eq('user_id', String(user.id))
         .order('created_at', { ascending: false })
         .limit(20);
+
+      if (error) {
+        if (isMissingSupabaseTableError(`${error.code ?? ''} ${error.message}`)) {
+          tableExists = false;
+          setRideHistory([]);
+          return;
+        }
+        return;
+      }
 
       setRideHistory((data ?? []) as RideHistoryItem[]);
     };
@@ -157,7 +171,7 @@ export function UserFloatingDock({ user }: UserFloatingDockProps) {
         'postgres_changes',
         { event: '*', schema: 'public', table: 'ride_requests', filter: `user_id=eq.${user.id}` },
         () => {
-          void loadHistory();
+          if (tableExists) void loadHistory();
         },
       )
       .subscribe();

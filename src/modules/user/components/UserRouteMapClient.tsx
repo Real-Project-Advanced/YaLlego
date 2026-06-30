@@ -2,8 +2,8 @@
 
 import { Heart, Info, Navigation, Route } from 'lucide-react';
 import L from 'leaflet';
-import { useEffect, useState, type PointerEvent } from 'react';
-import { MapContainer, Marker, Popup, TileLayer, useMap } from 'react-leaflet';
+import { useEffect, useMemo, useState, type PointerEvent } from 'react';
+import { MapContainer, Marker, Pane, Polyline, Popup, TileLayer, useMap } from 'react-leaflet';
 
 import 'leaflet/dist/leaflet.css';
 import { medellinBounds } from '@/lib/maps/medellin-bounds';
@@ -19,6 +19,7 @@ import type { DriverLocation } from '../hooks/useDriverLocations';
 type UserRouteMapClientProps = {
   routes: SearchRouteResult[];
   selectedRouteId: string;
+  currentLocation?: SearchRouteResult['startPoint'] | null;
   onSelectRoute: (routeId: string) => void;
   paradas: Parada[];
   onToggleFavoriteParada: (parada: Parada) => void;
@@ -35,6 +36,21 @@ type UserRouteMapClientProps = {
   routingStopId?: string;
   selectedDriverCode?: string;
   showRouteLines?: boolean;
+};
+
+type TileProvider = 'osm' | 'carto';
+
+const tileLayers: Record<TileProvider, { attribution: string; subdomains: string; url: string }> = {
+  osm: {
+    attribution: '&copy; OpenStreetMap contributors',
+    subdomains: 'abc',
+    url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+  },
+  carto: {
+    attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
+    subdomains: 'abcd',
+    url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
+  },
 };
 
 const createPointIcon = (color: string, label: string) =>
@@ -65,30 +81,16 @@ const createPointIcon = (color: string, label: string) =>
     popupAnchor: [0, -24],
   });
 
-const createBusIcon = (driverCode: string) =>
-  L.divIcon({
-    className: 'bus-marker-icon',
-    html: `
-      <div style="
-        width: 48px; height: 48px;
-        background: #1a1a2e;
-        border-radius: 50%;
-        border: 3px solid white;
-        display: flex; flex-direction: column;
-        align-items: center; justify-content: center;
-        color: white;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-      ">
-        <span style="font-size: 18px; line-height: 1;">🚌</span>
-        <span style="font-size: 9px; font-weight: 900; margin-top: 1px;">
-          ${driverCode}
-        </span>
-      </div>
-    `,
-    iconSize: [48, 48],
-    iconAnchor: [24, 24],
-    popupAnchor: [0, -28],
-  });
+const isSameMapPoint = (
+  first?: SearchRouteResult['startPoint'] | null,
+  second?: SearchRouteResult['startPoint'] | null,
+) =>
+  Boolean(
+    first &&
+    second &&
+    Math.abs(first.lat - second.lat) < 0.00005 &&
+    Math.abs(first.lng - second.lng) < 0.00005,
+  );
 
 const createStopIcon = (parada: Parada, isActive: boolean) => {
   const fallbackLabel = parada.titulo
@@ -150,6 +152,7 @@ function MapSizeInvalidator() {
 export default function UserRouteMapClient({
   routes,
   selectedRouteId,
+  currentLocation,
   paradas,
   onToggleFavoriteParada,
   onRouteFromCurrentLocation,
@@ -158,18 +161,40 @@ export default function UserRouteMapClient({
   onRequestDriver,
   onFavoriteDriverRoute,
   driverLocations = [],
-  onSendRideRequest,
-  onSaveFavorite,
   requestedDriverCode,
   isSendingRequest = false,
   routingStopId,
   selectedDriverCode,
 }: UserRouteMapClientProps) {
   const selectedRoute = routes.find((route) => route.id === selectedRouteId) ?? routes[0];
+  const routeStartsAtCurrentLocation = isSameMapPoint(currentLocation, selectedRoute?.startPoint);
   const [activeStop, setActiveStop] = useState<Parada | null>(null);
+  const [tileProvider, setTileProvider] = useState<TileProvider>('osm');
   const [popupOffset, setPopupOffset] = useState({ x: 0, y: 0 });
   const [isDraggingPopup, setIsDraggingPopup] = useState(false);
-  const activeDriverCodes = new Set(activeDrivers.map((driver) => driver.driverCode));
+  const tileLayer = tileLayers[tileProvider];
+  const visibleDrivers = useMemo(() => {
+    const byCode = new Map<string, ActiveDriverLocation>();
+
+    for (const driver of activeDrivers) {
+      byCode.set(driver.driverCode, driver);
+    }
+
+    for (const driver of driverLocations) {
+      if (byCode.has(driver.driver_code)) continue;
+
+      byCode.set(driver.driver_code, {
+        driverCode: driver.driver_code,
+        driverId: Number(driver.driver_id) || null,
+        routeName: driver.route_name,
+        lat: driver.lat,
+        lng: driver.lng,
+        price: 3800,
+      });
+    }
+
+    return Array.from(byCode.values());
+  }, [activeDrivers, driverLocations]);
 
   const openStopPopup = (parada: Parada, event: L.LeafletMouseEvent) => {
     if (activeStop?.id !== parada.id) {
@@ -216,28 +241,57 @@ export default function UserRouteMapClient({
         maxBoundsViscosity={1.0}
         className="relative z-0 h-full w-full"
         scrollWheelZoom={false}
+        zoomControl={false}
       >
         <MapSizeInvalidator />
         <TileLayer
-          attribution="&copy; OpenStreetMap contributors &copy; CARTO"
-          url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+          key={tileProvider}
+          attribution={tileLayer.attribution}
+          eventHandlers={{
+            tileerror: () => setTileProvider((current) => (current === 'osm' ? 'carto' : current)),
+          }}
+          subdomains={tileLayer.subdomains}
+          url={tileLayer.url}
         />
+
+        <Pane name="user-route-line-pane" style={{ zIndex: 420 }} />
+        <Pane name="user-stop-pane" style={{ zIndex: 520 }} />
+        <Pane name="user-bus-pane" style={{ zIndex: 760 }} />
 
         {selectedRoute && (
           <>
+            {selectedRoute.coordinates.length > 1 && (
+              <Polyline
+                pane="user-route-line-pane"
+                positions={selectedRoute.coordinates}
+                pathOptions={{
+                  color: '#0891b2',
+                  opacity: 0.92,
+                  weight: 7,
+                  lineCap: 'round',
+                  lineJoin: 'round',
+                  className: 'route-glow',
+                }}
+              />
+            )}
             <Marker
+              pane="user-stop-pane"
               position={[selectedRoute.startPoint.lat, selectedRoute.startPoint.lng]}
-              icon={createPointIcon('linear-gradient(135deg,#06b6d4,#0891b2)', 'Origen')}
+              icon={createPointIcon(
+                'linear-gradient(135deg,#06b6d4,#0891b2)',
+                routeStartsAtCurrentLocation ? 'Mi ubicacion actual' : 'Origen',
+              )}
             >
               <Popup>
                 <div className="space-y-1 text-sm">
                   <strong>{selectedRoute.startPoint.name}</strong>
-                  <p>Origen</p>
+                  <p>{routeStartsAtCurrentLocation ? 'Mi ubicacion actual' : 'Origen'}</p>
                 </div>
               </Popup>
             </Marker>
 
             <Marker
+              pane="user-stop-pane"
               position={[selectedRoute.endPoint.lat, selectedRoute.endPoint.lng]}
               icon={createPointIcon('linear-gradient(135deg,#f43f5e,#be123c)', 'Destino')}
             >
@@ -259,6 +313,7 @@ export default function UserRouteMapClient({
           return (
             <Marker
               key={parada.id}
+              pane="user-stop-pane"
               position={[parada.latitud, parada.longitud]}
               icon={createStopIcon(parada, isActive)}
               eventHandlers={{
@@ -345,7 +400,7 @@ export default function UserRouteMapClient({
           );
         })}
 
-        {activeDrivers.map((driver) => {
+        {visibleDrivers.map((driver) => {
           const isSelected = selectedDriverCode === driver.driverCode;
           const isRequested = requestedDriverCode === driver.driverCode;
           const eta = driver.estimatedDuration ?? selectedRoute?.duration ?? 8;
@@ -354,8 +409,13 @@ export default function UserRouteMapClient({
           return (
             <Marker
               key={driver.driverCode}
+              pane="user-bus-pane"
               position={[driver.lat, driver.lng]}
-              icon={createBusMarkerIcon(driver.driverCode, driver.isHighlighted || isSelected)}
+              icon={createBusMarkerIcon(
+                driver.driverCode,
+                driver.isHighlighted || isSelected,
+                'EL BUS',
+              )}
               eventHandlers={{
                 click: () => onSelectDriver?.(driver),
               }}
@@ -408,61 +468,6 @@ export default function UserRouteMapClient({
             </Marker>
           );
         })}
-
-        {driverLocations
-          .filter((driver) => !activeDriverCodes.has(driver.driver_code))
-          .map((driver) => (
-            <Marker
-              key={driver.id}
-              position={[driver.lat, driver.lng]}
-              icon={createBusIcon(driver.driver_code)}
-            >
-              <Popup closeButton={false} minWidth={260}>
-                <article className="w-65 rounded-lg border border-slate-200 bg-white p-4">
-                  <div className="flex items-center gap-3">
-                    <span className="grid size-11 shrink-0 place-items-center rounded-full bg-[#1a1a2e] text-2xl">
-                      🚌
-                    </span>
-                    <div>
-                      <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-500">
-                        Bus activo
-                      </p>
-                      <h3 className="mt-1 text-base font-black text-slate-950">
-                        {driver.route_name}
-                      </h3>
-                      <p className="text-xs font-bold text-slate-500">
-                        Código: {driver.driver_code}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="mt-3 flex flex-wrap gap-2 text-xs font-black">
-                    <span className="rounded-full bg-slate-50 px-3 py-2 text-slate-700">
-                      ~8 min estimado
-                    </span>
-                    <span className="rounded-full bg-emerald-50 px-3 py-2 text-emerald-700">
-                      $3.800
-                    </span>
-                  </div>
-                  <div className="mt-3 grid grid-cols-2 gap-2">
-                    <button
-                      type="button"
-                      onClick={() => onSendRideRequest?.(driver)}
-                      className="h-10 rounded-lg bg-[#1a1a2e] text-xs font-black text-white"
-                    >
-                      Solicitar 🚌
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => onSaveFavorite?.(driver)}
-                      className="h-10 rounded-lg border border-slate-200 bg-white text-xs font-black text-slate-700"
-                    >
-                      ♥ Favorito
-                    </button>
-                  </div>
-                </article>
-              </Popup>
-            </Marker>
-          ))}
       </MapContainer>
 
       <div className="pointer-events-none absolute inset-0 z-1 bg-[linear-gradient(180deg,rgba(255,255,255,0.10),rgba(255,255,255,0)_24%,rgba(8,145,178,0.08))]" />

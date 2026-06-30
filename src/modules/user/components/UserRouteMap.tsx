@@ -16,6 +16,7 @@ const UserRouteMapClient = dynamic(() => import('./UserRouteMapClient'), {
 type UserRouteMapProps = {
   routes: SearchRouteResult[];
   selectedRouteId: string;
+  currentLocation?: SearchRouteResult['startPoint'] | null;
   onSelectRoute: (routeId: string) => void;
   paradas: Parada[];
   onToggleFavoriteParada: (parada: Parada) => void;

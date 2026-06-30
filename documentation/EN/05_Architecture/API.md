@@ -2,7 +2,7 @@
 
 ## Overview
 
-The LlegoYa API is built with **Next.js Route Handlers** and provides authentication services and an AI-powered mobility assistant. All endpoints return responses in JSON format.
+The LlegoYa API is built with **Next.js Route Handlers** and provides authentication services and an AI-powered mobility assistant. The platform also includes a small **Go tracking service** for real-time driver GPS and road-following navigation geometry. All endpoints return responses in JSON format.
 
 **Base URL**
 
@@ -181,3 +181,77 @@ All conversations are logged asynchronously in MongoDB for monitoring purposes.
 | 200    | Response generated successfully |
 | 400    | Invalid request                 |
 | 500    | Internal server error           |
+
+---
+
+## Go Tracking And Navigation Service
+
+**Base URL**
+
+```text
+http://localhost:8080
+```
+
+### GET `/navigation/route`
+
+Returns a road-following route geometry between two places or two GPS points. The driver map uses this endpoint to avoid drawing a straight, inaccurate line from the beginning to the end of the route.
+
+**Query Parameters**
+
+| Parameter        | Description            |
+| ---------------- | ---------------------- |
+| `origin`         | Origin place name      |
+| `destination`    | Destination place name |
+| `originLat`      | Origin latitude        |
+| `originLng`      | Origin longitude       |
+| `destinationLat` | Destination latitude   |
+| `destinationLng` | Destination longitude  |
+
+When `origin` and `destination` are present, the Go service geocodes them around Medellin before calculating the route. Coordinate parameters remain supported as a fallback.
+
+**Successful Response**
+
+```json
+{
+  "coordinates": [
+    [6.253, -75.5905],
+    [6.2525, -75.5898]
+  ],
+  "distanceKm": 4.8,
+  "durationMin": 18.2,
+  "provider": "osrm"
+}
+```
+
+Coordinates are returned as `[lat, lng]` pairs to match Leaflet and the frontend map components.
+
+| Status | Description                        |
+| ------ | ---------------------------------- |
+| 200    | Route geometry returned            |
+| 400    | Missing or invalid coordinates     |
+| 404    | No route found                     |
+| 502    | Routing provider unavailable/error |
+
+### WebSocket `/ws/driver`
+
+Receives authenticated driver GPS updates and broadcasts active bus positions to passengers.
+
+### WebSocket `/ws/passenger`
+
+Streams active bus locations to passenger map clients.
+
+**Message Shape**
+
+```json
+[
+  {
+    "id": "12",
+    "plate": "ABC123",
+    "model": "Buseta",
+    "capacity": 24,
+    "location": { "lat": 6.2442, "lng": -75.5812 },
+    "routeId": 4,
+    "routeName": "Circular -> Laureles"
+  }
+]
+```

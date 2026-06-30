@@ -9,7 +9,9 @@ const rideRequestsKey = 'yallego.local.rideRequests';
 const isBrowser = () => typeof window !== 'undefined';
 
 export const isMissingSupabaseTableError = (message = '') =>
-  /schema cache|could not find the table|does not exist|relation .* does not exist/i.test(message);
+  /404|PGRST116|PGRST205|schema cache|could not find the table|does not exist|relation .* does not exist/i.test(
+    message,
+  );
 
 const readJson = <T>(key: string, fallback: T): T => {
   if (!isBrowser()) return fallback;

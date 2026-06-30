@@ -36,6 +36,7 @@ type UseRideRequestsOptions = {
 export function useRideRequests({ driverId }: UseRideRequestsOptions) {
   const [requests, setRequests] = useState<RideRequest[]>([]);
   const [error, setError] = useState('');
+  const [tableExists, setTableExists] = useState(true);
 
   const pendingRequests = useMemo(
     () => requests.filter((request) => request.status === 'pending'),
@@ -43,6 +44,19 @@ export function useRideRequests({ driverId }: UseRideRequestsOptions) {
   );
 
   const loadRequests = useCallback(async () => {
+    if (!tableExists) {
+      setRequests(
+        readLocalRideRequests()
+          .filter(
+            (request) =>
+              String(request.driver_id ?? '') === String(driverId) && request.status === 'pending',
+          )
+          .sort((a, b) => String(b.created_at ?? '').localeCompare(String(a.created_at ?? ''))),
+      );
+      setError('');
+      return;
+    }
+
     const { data, error: requestError } = await supabase
       .from('ride_requests')
       .select('*')
@@ -51,7 +65,8 @@ export function useRideRequests({ driverId }: UseRideRequestsOptions) {
       .order('created_at', { ascending: false });
 
     if (requestError) {
-      if (isMissingSupabaseTableError(requestError.message)) {
+      if (isMissingSupabaseTableError(`${requestError.code ?? ''} ${requestError.message}`)) {
+        setTableExists(false);
         setRequests(
           readLocalRideRequests()
             .filter(
@@ -71,17 +86,32 @@ export function useRideRequests({ driverId }: UseRideRequestsOptions) {
 
     setRequests((data ?? []) as RideRequest[]);
     setError('');
-  }, [driverId]);
+  }, [driverId, tableExists]);
 
   const updateRequestStatus = useCallback(
     async (requestId: string, status: 'accepted' | 'rejected') => {
+      if (!tableExists) {
+        updateLocalRideRequestStatus(requestId, status);
+        setRequests((current) =>
+          current.map((request) => (request.id === requestId ? { ...request, status } : request)),
+        );
+        return true;
+      }
+
       const { error: updateError } = await supabase
         .from('ride_requests')
         .update({ status, updated_at: new Date().toISOString() })
         .eq('id', requestId);
 
       if (updateError) {
-        if (!isMissingSupabaseTableError(updateError.message)) {
+        if (isMissingSupabaseTableError(`${updateError.code ?? ''} ${updateError.message}`)) {
+          setTableExists(false);
+          updateLocalRideRequestStatus(requestId, status);
+          setRequests((current) =>
+            current.map((request) => (request.id === requestId ? { ...request, status } : request)),
+          );
+          return true;
+        } else {
           setError(updateError.message);
           return false;
         }
@@ -104,16 +134,26 @@ export function useRideRequests({ driverId }: UseRideRequestsOptions) {
 
       return true;
     },
-    [],
+    [tableExists],
   );
 
   useEffect(() => {
     const loadTimer = window.setTimeout(() => {
       void loadRequests();
     }, 0);
-    const interval = window.setInterval(() => {
-      void loadRequests();
-    }, 1500);
+    const interval = window.setInterval(
+      () => {
+        void loadRequests();
+      },
+      tableExists ? 5000 : 1500,
+    );
+
+    if (!tableExists) {
+      return () => {
+        window.clearTimeout(loadTimer);
+        window.clearInterval(interval);
+      };
+    }
 
     const channel = supabase
       .channel(`driver-ride-requests-${driverId}`)
@@ -136,7 +176,7 @@ export function useRideRequests({ driverId }: UseRideRequestsOptions) {
       window.clearInterval(interval);
       void supabase.removeChannel(channel);
     };
-  }, [driverId, loadRequests]);
+  }, [driverId, loadRequests, tableExists]);
 
   return {
     error,
