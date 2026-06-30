@@ -15,17 +15,15 @@ export default async function SuperAdminPage() {
   return (
     <main className="min-h-screen bg-slate-50">
       <div className="max-w-7xl mx-auto p-6">
-        <h1 className="text-4xl font-black text-slate-950 mb-2">
-          Panel Super Admin
-        </h1>
+        <h1 className="text-4xl font-black text-slate-950 mb-2">Super Admin Panel</h1>
         <p className="text-slate-600">
-          Bienvenido, <span className="font-bold">{user.fullname}</span>
+          Welcome, <span className="font-bold">{user.fullname}</span>
         </p>
 
         {/* Super admin content */}
         <div className="mt-8 bg-white rounded-lg shadow p-6">
-          <h2 className="text-2xl font-bold mb-4">Control de Sistema</h2>
-          <p className="text-slate-600">Panel de control super admin próximamente...</p>
+          <h2 className="text-2xl font-bold mb-4">System Control</h2>
+          <p className="text-slate-600">Super admin control panel coming soon...</p>
         </div>
       </div>
     </main>

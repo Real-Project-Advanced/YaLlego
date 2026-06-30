@@ -1,13 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { authService } from '@/modules/auth/services/auth.service';
 import { setAuthCookies } from '@/lib/auth';
+import { registerSchema } from '@/shared/validators';
 import { z } from 'zod';
-
-const registerSchema = z.object({
-  name: z.string().min(2, 'El nombre es obligatorio'),
-  email: z.string().email('Email inválido'),
-  password: z.string().min(8, 'La contraseña debe tener al menos 8 caracteres'),
-});
 
 export async function POST(req: NextRequest) {
   try {
@@ -25,7 +20,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (result.data) {
-      // Generar tokens y establecer cookies
+      // Set auth cookies.
       const { generateTokens } = await import('@/lib/auth');
       const tokens = await generateTokens({
         id: result.data.user.id,

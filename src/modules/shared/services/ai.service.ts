@@ -1,12 +1,17 @@
 export interface Message {
-  role: 'user' | 'assistant' | 'system'
-  content: string
+  role: 'user' | 'assistant' | 'system';
+  content: string;
 }
 
+const MOBILITY_SYSTEM_PROMPT = `Eres SmartOps Medellin, un asistente exclusivo de movilidad urbana del Valle de Aburra.
+
+Solo puedes responder preguntas sobre rutas, transporte publico, caminatas, tiempos aproximados, estaciones, barrios, lugares de Medellin y opciones para moverse por la ciudad.
+
+Si el usuario pregunta por otro tema, responde brevemente: "Solo puedo ayudarte con movilidad y rutas en Medellin. Dime desde donde sales y hacia donde vas." No expliques temas externos aunque el usuario insista.`;
+
 export class AIService {
-  private static endpoint =
-    process.env.OLLAMA_ENDPOINT || 'http://127.0.0.1:11434/api'
-  private static model = 'smartops-bot'
+  private static endpoint = process.env.OLLAMA_ENDPOINT || 'http://127.0.0.1:11434/api';
+  private static model = process.env.OLLAMA_MODEL || 'smartops-bot';
 
   /**
    * Envía una pregunta al modelo y obtiene la respuesta completa.
@@ -20,20 +25,23 @@ export class AIService {
         },
         body: JSON.stringify({
           model: this.model,
-          messages,
+          messages: [
+            { role: 'system', content: MOBILITY_SYSTEM_PROMPT },
+            ...messages.filter((message) => message.role !== 'system'),
+          ],
           stream: false,
         }),
-      })
+      });
 
       if (!response.ok) {
-        throw new Error(`Ollama error: ${response.statusText}`)
+        throw new Error(`Ollama error: ${response.statusText}`);
       }
 
-      const data = await response.json()
-      return data.message.content
+      const data = await response.json();
+      return data.message.content;
     } catch (error) {
-      console.error('Error in AIService.chat:', error)
-      throw error
+      console.error('Error in AIService.chat:', error);
+      throw error;
     }
   }
 
@@ -49,19 +57,22 @@ export class AIService {
         },
         body: JSON.stringify({
           model: this.model,
-          messages,
+          messages: [
+            { role: 'system', content: MOBILITY_SYSTEM_PROMPT },
+            ...messages.filter((message) => message.role !== 'system'),
+          ],
           stream: true,
         }),
-      })
+      });
 
       if (!response.ok) {
-        throw new Error(`Ollama error: ${response.statusText}`)
+        throw new Error(`Ollama error: ${response.statusText}`);
       }
 
-      return response.body // Retorna el stream legible
+      return response.body; // Retorna el stream legible
     } catch (error) {
-      console.error('Error in AIService.streamChat:', error)
-      throw error
+      console.error('Error in AIService.streamChat:', error);
+      throw error;
     }
   }
 }

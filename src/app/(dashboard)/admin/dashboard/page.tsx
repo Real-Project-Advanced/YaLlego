@@ -21,6 +21,13 @@ export default async function AdminDashboard() {
     prisma.routes.count(),
   ]);
 
+  const stats = [
+    { title: 'Users', value: userCount, borderClassName: 'border-blue-500' },
+    { title: 'Drivers', value: driverCount, borderClassName: 'border-green-500' },
+    { title: 'Vehicles', value: vehicleCount, borderClassName: 'border-purple-500' },
+    { title: 'Routes', value: routeCount, borderClassName: 'border-orange-500' },
+  ];
+
   return (
     <AdminOverview
       user={user}

@@ -1,17 +1,17 @@
-'use client'
+'use client';
 
-import React, { useState, useRef, useEffect } from 'react'
-import { Send, Bot, User, MapPin, Navigation } from 'lucide-react'
-import { clsx, type ClassValue } from 'clsx'
-import { twMerge } from 'tailwind-merge'
+import React, { useState, useRef, useEffect } from 'react';
+import { Send, Bot, User, MapPin, Navigation } from 'lucide-react';
+import { clsx, type ClassValue } from 'clsx';
+import { twMerge } from 'tailwind-merge';
 
 function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs))
+  return twMerge(clsx(inputs));
 }
 
 interface Message {
-  role: 'user' | 'assistant'
-  content: string
+  role: 'user' | 'assistant';
+  content: string;
 }
 
 export default function ChatInterface() {
@@ -19,69 +19,64 @@ export default function ChatInterface() {
     {
       role: 'assistant',
       content:
-        '¡Hola! Soy tu asistente de SmartOps Medellín. ¿A dónde quieres ir hoy o qué ruta deseas consultar?',
+        'Hi! I am your SmartOps Medellin assistant. Where do you want to go today, or which route would you like to check?',
     },
-  ])
-  const [input, setInput] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
-  const scrollRef = useRef<HTMLDivElement>(null)
+  ]);
+  const [input, setInput] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [messages])
+  }, [messages]);
 
   const handleSend = async () => {
-    if (!input.trim() || isLoading) return
+    if (!input.trim() || isLoading) return;
 
-    const userMessage: Message = { role: 'user', content: input }
-    setMessages((prev) => [...prev, userMessage])
-    setInput('')
-    setIsLoading(true)
+    const userMessage: Message = { role: 'user', content: input };
+    setMessages((prev) => [...prev, userMessage]);
+    setInput('');
+    setIsLoading(true);
 
     try {
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ messages: [...messages, userMessage] }),
-      })
+      });
 
-      if (!response.ok) throw new Error('Error al conectar con la IA')
+      if (!response.ok) throw new Error('Error connecting to AI');
 
-      const data = await response.json()
-      setMessages((prev) => [
-        ...prev,
-        { role: 'assistant', content: data.content },
-      ])
+      const data = await response.json();
+      setMessages((prev) => [...prev, { role: 'assistant', content: data.content }]);
     } catch (error) {
       setMessages((prev) => [
         ...prev,
         {
           role: 'assistant',
           content:
-            'Lo siento, hubo un error al procesar tu solicitud. Asegúrate de que Ollama esté corriendo.',
+            'Sorry, there was an error processing your request. Make sure Ollama is running.',
         },
-      ])
+      ]);
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   return (
     <div className="flex flex-col h-screen bg-background text-foreground">
-      <header className="flex items-center justify-between px-6 py-4 border-b border-border bg-card/50 backdrop-blur-md sticky top-0 z-10">
-        <div className="flex items-center gap-3">
+      <header className="sticky top-0 z-10 flex items-center justify-between border-b border-border bg-card/50 px-4 py-4 backdrop-blur-md sm:px-6">
+        <div className="flex min-w-0 items-center gap-3">
           <div className="p-2 bg-primary/10 rounded-xl">
             <Navigation className="w-6 h-6 text-primary" />
           </div>
-          <div>
-            <h1 className="font-bold text-lg tracking-tight">
-              SmartOps Medellín
-            </h1>
+          <div className="min-w-0">
+            <h1 className="truncate text-lg font-bold tracking-tight">SmartOps Medellín</h1>
             <p className="text-xs text-muted-foreground flex items-center gap-1">
               <span className="w-2 h-2 bg-primary rounded-full animate-pulse"></span>
-              IA de Movilidad Online
+              Online Mobility AI
             </p>
           </div>
         </div>
@@ -90,7 +85,7 @@ export default function ChatInterface() {
       <main className="flex-1 overflow-hidden flex flex-col max-w-5xl mx-auto w-full relative">
         <div
           ref={scrollRef}
-          className="flex-1 overflow-y-auto p-6 space-y-6 scroll-smooth"
+          className="flex-1 space-y-5 overflow-y-auto p-4 scroll-smooth sm:space-y-6 sm:p-6"
         >
           {messages.map((msg, i) => (
             <div
@@ -112,7 +107,7 @@ export default function ChatInterface() {
               </div>
               <div
                 className={cn(
-                  'max-w-[80%] px-4 py-3 rounded-2xl text-sm leading-relaxed shadow-sm',
+                  'max-w-[min(82%,38rem)] break-words rounded-2xl px-4 py-3 text-sm leading-relaxed shadow-sm',
                   msg.role === 'user'
                     ? 'bg-primary text-primary-foreground rounded-tr-none'
                     : 'bg-card border border-border rounded-tl-none',
@@ -138,14 +133,14 @@ export default function ChatInterface() {
           )}
         </div>
 
-        <div className="p-6 bg-gradient-to-t from-background to-transparent">
+        <div className="bg-gradient-to-t from-background to-transparent p-4 sm:p-6">
           <div className="relative glass rounded-2xl border border-border p-2 focus-within:ring-2 ring-primary/20 transition-all duration-300">
             <div className="flex items-center gap-2 px-2">
-              <MapPin className="text-muted-foreground w-5 h-5" />
+              <MapPin className="h-5 w-5 shrink-0 text-muted-foreground" />
               <input
                 type="text"
-                placeholder="Pregúntame cómo llegar a algún lugar..."
-                className="flex-1 bg-transparent border-none focus:ring-0 py-3 text-sm"
+                placeholder="Ask me how to get somewhere..."
+                className="min-w-0 flex-1 border-none bg-transparent py-3 text-sm focus:ring-0"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSend()}
@@ -165,10 +160,10 @@ export default function ChatInterface() {
             </div>
           </div>
           <p className="mt-3 text-[10px] text-center text-muted-foreground uppercase tracking-widest">
-            SmartOps Medellín - Movilidad Inteligente para la Ciudad
+            SmartOps Medellin - Smart Mobility for the City
           </p>
         </div>
       </main>
     </div>
-  )
+  );
 }

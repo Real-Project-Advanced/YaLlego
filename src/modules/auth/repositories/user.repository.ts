@@ -1,47 +1,35 @@
 import { prisma } from '@/lib/prisma';
 import { User, UserRole } from '@/shared/types';
 
-/**
- * UserRepository: Capa de acceso a datos para usuarios
- */
+// User data access.
 export class UserRepository {
-  /**
-   * Encuentra un usuario por email
-   */
+  // Find by email.
   async findByEmail(email: string): Promise<User | null> {
     return prisma.users.findUnique({
       where: { email },
     }) as Promise<User | null>;
   }
 
-  /**
-   * Encuentra un usuario por ID
-   */
+  // Find by ID.
   async findById(id: number): Promise<User | null> {
     return prisma.users.findUnique({
       where: { id },
     }) as Promise<User | null>;
   }
 
-  /**
-   * Obtiene todos los usuarios
-   */
+  // Find all.
   async findAll(): Promise<User[]> {
     return prisma.users.findMany() as Promise<User[]>;
   }
 
-  /**
-   * Obtiene usuarios por rol
-   */
+  // Find by role.
   async findByRole(role: UserRole): Promise<User[]> {
     return prisma.users.findMany({
       where: { role: role as UserRole },
     }) as Promise<User[]>;
   }
 
-  /**
-   * Crea un nuevo usuario
-   */
+  // Create user.
   async create(data: {
     fullname: string;
     email: string;
@@ -64,9 +52,7 @@ export class UserRepository {
     }) as Promise<User>;
   }
 
-  /**
-   * Actualiza un usuario
-   */
+  // Update user.
   async update(
     id: number,
     data: Partial<{
@@ -88,18 +74,14 @@ export class UserRepository {
     }) as Promise<User>;
   }
 
-  /**
-   * Elimina un usuario
-   */
+  // Delete user.
   async delete(id: number): Promise<void> {
     await prisma.users.delete({
       where: { id },
     });
   }
 
-  /**
-   * Verifica si existe un SUPER_ADMIN
-   */
+  // Check super admin.
   async hasSuperAdmin(): Promise<boolean> {
     const admin = await prisma.users.findFirst({
       where: { role: 'SUPER_ADMIN' as UserRole },
@@ -108,5 +90,5 @@ export class UserRepository {
   }
 }
 
-// Instancia del repositorio
+// Repository instance.
 export const userRepository = new UserRepository();
