@@ -1,117 +1,83 @@
-# Deployment
+# Guía de Despliegue
 
-## Overview
+## Descripción General
 
-YaLlego is built with Next.js and can be deployed to cloud platforms such as Vercel, Railway, or Docker environments.
+LlegoYa es una aplicación web **Full Stack** desarrollada con **Next.js**, **Prisma ORM**, **PostgreSQL**, **MongoDB** y **Ollama**.
 
----
+## Requisitos
 
-# Deployment Architecture
+- Node.js 20 o superior
+- npm
+- PostgreSQL
+- MongoDB
+- Ollama
 
-```text
-Developer
+## Variables de Entorno
 
-↓
-
-GitHub Repository
-
-↓
-
-Continuous Deployment
-
-↓
-
-Hosting Platform
-
-↓
-
-Production Environment
-```
-
----
-
-# Environment Variables
-
-The following variables are required:
+Crea un archivo `.env`.
 
 ```env
-DATABASE_URL=
+DATABASE_URL=<cadena de conexión a PostgreSQL>
 
-JWT_SECRET=
+MONGODB_URI=<cadena de conexión a MongoDB>
 
-NEXTAUTH_SECRET=
+JWT_SECRET=<clave secreta para JWT>
 
-NEXTAUTH_URL=
+OLLAMA_URL=http://localhost:11434
 ```
 
----
+## Instalación
 
-# Build Process
-
-1. Install dependencies
+Clona el repositorio e instala las dependencias.
 
 ```bash
+git clone <url-del-repositorio>
+
+cd LlegoYa
+
 npm install
 ```
 
-2. Generate Prisma Client
+## Generar el Cliente de Prisma
 
 ```bash
 npx prisma generate
 ```
 
-3. Run database migrations
+## Ejecutar las Migraciones
 
 ```bash
 npx prisma migrate deploy
 ```
 
-4. Build the project
+## Iniciar la Aplicación
+
+Modo de desarrollo:
+
+```bash
+npm run dev
+```
+
+Modo de producción:
 
 ```bash
 npm run build
-```
 
-5. Start the application
-
-```bash
 npm start
 ```
 
----
+La aplicación estará disponible en:
 
-# Deployment Checklist
+```text
+http://localhost:3000
+```
 
-- Environment variables configured
-- Database available
-- Prisma migrations executed
-- Build completed successfully
-- Authentication tested
-- API endpoints verified
+## Tecnologías
 
----
-
-# Recommended Infrastructure
-
-| Component       | Technology             |
-| --------------- | ---------------------- |
-| Frontend        | Next.js                |
-| Backend         | Next.js Route Handlers |
-| ORM             | Prisma                 |
-| Database        | PostgreSQL             |
-| Authentication  | JWT                    |
-| Hosting         | Vercel                 |
-| Version Control | GitHub                 |
-
----
-
-# Monitoring
-
-After deployment, verify:
-
-- Application availability
-- API responses
-- Database connectivity
-- Authentication flow
-- Error logs
-- Performance metrics
+- Next.js
+- TypeScript
+- PostgreSQL
+- Prisma ORM
+- MongoDB
+- Ollama
+- Autenticación mediante JWT

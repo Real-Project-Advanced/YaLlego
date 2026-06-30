@@ -12,7 +12,6 @@ export default function RegisterPage() {
       footerText="¿Ya tienes cuenta?"
       footerLink={{ text: 'Inicia sesión', href: '/login' }}
     >
-      {/* Header Centrado */}
       <div className="mb-8 text-center animate-fade-in-up">
         <h2 className="text-3xl font-black text-slate-900">Crear cuenta</h2>
         <p className="mt-2 text-sm text-slate-500">
@@ -26,7 +25,6 @@ export default function RegisterPage() {
         </p>
       </div>
 
-      {/* Formulario y Campos Centrados */}
       <Form action={registerAction} className="animate-fade-in-up delay-100 space-y-5">
         <div className="text-center">
           <FormField
@@ -60,34 +58,35 @@ export default function RegisterPage() {
             placeholder="Mínimo 8 caracteres"
             autoComplete="new-password"
             required
-            validate="password"
+            validate="registerPassword"
           />
         </div>
 
-        {/* Requirements checklist */}
         <div
           className="rounded-xl p-4 space-y-2 text-left"
           style={{ background: '#f8fafc', border: '1px solid #e2e8f0' }}
         >
           <p className="text-xs font-bold text-slate-600 mb-2">La contraseña debe tener:</p>
-          {['8 o más caracteres', 'Al menos una letra mayúscula', 'Al menos un número'].map(
-            (req, i) => (
-              <div key={i} className="flex items-center gap-2 text-xs text-slate-500">
-                <span
-                  className="size-4 rounded-full flex items-center justify-center flex-shrink-0"
-                  style={{ background: '#e2e8f0' }}
-                >
-                  <svg width="8" height="8" viewBox="0 0 10 10">
-                    <circle cx="5" cy="5" r="3" fill="#94a3b8" />
-                  </svg>
-                </span>
-                {req}
-              </div>
-            ),
-          )}
+          {[
+            '8 o más caracteres',
+            'Al menos una letra mayúscula',
+            'Al menos una letra minúscula',
+            'Al menos un número',
+          ].map((req, i) => (
+            <div key={i} className="flex items-center gap-2 text-xs text-slate-500">
+              <span
+                className="size-4 rounded-full flex items-center justify-center flex-shrink-0"
+                style={{ background: '#e2e8f0' }}
+              >
+                <svg width="8" height="8" viewBox="0 0 10 10">
+                  <circle cx="5" cy="5" r="3" fill="#94a3b8" />
+                </svg>
+              </span>
+              {req}
+            </div>
+          ))}
         </div>
 
-        {/* Terms */}
         <label className="flex items-start gap-3 cursor-pointer group text-left">
           <input
             type="checkbox"

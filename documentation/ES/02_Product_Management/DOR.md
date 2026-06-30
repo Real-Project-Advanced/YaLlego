@@ -1,52 +1,52 @@
-# Definition of Ready (DoR)
+# Definición de Preparado (Definition of Ready - DoR)
 
-## Purpose
+## Propósito
 
-The Definition of Ready (DoR) specifies the conditions that a Product Backlog Item must satisfy before the development team begins implementation.
+La Definición de Preparado (DoR) especifica las condiciones que debe cumplir un **Elemento del Product Backlog (PBI)** antes de que el equipo de desarrollo inicie su implementación.
 
-The goal is to ensure that developers receive well-defined, understandable, and estimable work items.
-
----
-
-# Objectives
-
-- Reduce development interruptions.
-- Improve Sprint Planning.
+El objetivo es garantizar que los desarrolladores reciban elementos de trabajo bien definidos, comprensibles y que puedan estimarse adecuadamente.
 
 ---
 
-# Definition of Ready Checklist
+# Objetivos
 
-A User Story is considered **Ready** when the following conditions are met.
-
-## Requirements
-
-- User Story clearly written.
-- Business objective identified.
+- Reducir las interrupciones durante el desarrollo.
+- Mejorar la planificación del Sprint.
 
 ---
 
-## Acceptance Criteria
+# Lista de Verificación de la Definición de Preparado
 
-- Acceptance Criteria defined.
-- Success conditions measurable.
+Una Historia de Usuario se considera **Lista** cuando se cumplen las siguientes condiciones.
 
----
+## Requisitos
 
-## Priority
-
-- Priority assigned by Product Owner.
-- Included in Sprint Backlog.
+- La Historia de Usuario está redactada de forma clara.
+- El objetivo de negocio ha sido identificado.
 
 ---
 
-## Design
+## Criterios de Aceptación
 
-- UI mockups available if required.
-- Database impact identified.
+- Los criterios de aceptación están definidos.
+- Las condiciones de éxito son medibles.
 
 ---
 
-# Ready Criteria
+## Prioridad
 
-Only User Stories that satisfy every criterion may enter Sprint Planning.
+- La prioridad ha sido asignada por el Product Owner.
+- La Historia de Usuario está incluida en el Sprint Backlog.
+
+---
+
+## Diseño
+
+- Se dispone de maquetas de la interfaz de usuario (UI) cuando son necesarias.
+- Se ha identificado el impacto sobre la base de datos.
+
+---
+
+# Criterios de Preparación
+
+Solo las Historias de Usuario que cumplan todos los criterios establecidos podrán ingresar a la planificación del Sprint (Sprint Planning).
