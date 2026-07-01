@@ -8,9 +8,9 @@ Durante el Sprint 01 se identificaron algunos bloqueos menores que afectaron tem
 
 ## Registro
 
-| Fecha | Bloqueador      | Impacto | Solución                    |
+| Fecha | Bloqueador | Impacto | Solución |
 | ----- | --------------- | ------- | --------------------------- | --- |
-| Día 3 | Error en Prisma | Medio   | Regeneración de migraciones | --- |
+| Día 3 | Error en Prisma | Medio | Regeneración de migraciones | --- |
 
 ## Conclusiones
 
