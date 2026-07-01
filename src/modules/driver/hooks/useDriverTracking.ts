@@ -100,13 +100,17 @@ export function useDriverTracking({ driverCode, driverId, routeName }: UseDriver
     if (typeof WebSocket === 'undefined') return;
 
     let socket = trackingSocketRef.current;
+
     const needsNewSocket =
-      !socket || socket.readyState === WebSocket.CLOSED || socket.readyState === WebSocket.CLOSING;
+      socket === null ||
+      socket.readyState === WebSocket.CLOSED ||
+      socket.readyState === WebSocket.CLOSING;
 
     if (needsNewSocket) {
       try {
         if (!trackingSocketTokenRef.current) {
           const response = await fetch('/api/auth/token');
+
           if (!response.ok) return;
 
           const payload = (await response.json()) as { token?: string };
@@ -120,7 +124,9 @@ export function useDriverTracking({ driverCode, driverId, routeName }: UseDriver
             trackingSocketTokenRef.current,
           )}`,
         );
+
         trackingSocketRef.current = socket;
+
         socket.onclose = () => {
           if (trackingSocketRef.current === socket) {
             trackingSocketRef.current = null;
@@ -131,7 +137,13 @@ export function useDriverTracking({ driverCode, driverId, routeName }: UseDriver
       }
     }
 
-    const payload = JSON.stringify({ lat: position.lat, lng: position.lng });
+    // TypeScript ya sabe que aquí existe
+    if (!socket) return;
+
+    const payload = JSON.stringify({
+      lat: position.lat,
+      lng: position.lng,
+    });
 
     if (socket.readyState === WebSocket.OPEN) {
       socket.send(payload);
@@ -140,8 +152,14 @@ export function useDriverTracking({ driverCode, driverId, routeName }: UseDriver
 
     if (socket.readyState === WebSocket.CONNECTING) {
       const currentSocket = socket;
-      const sendWhenOpen = () => currentSocket.send(payload);
-      currentSocket.addEventListener('open', sendWhenOpen, { once: true });
+
+      const sendWhenOpen = () => {
+        currentSocket.send(payload);
+      };
+
+      currentSocket.addEventListener('open', sendWhenOpen, {
+        once: true,
+      });
     }
   }, []);
 
