@@ -15,6 +15,7 @@ import {
   Heart,
   Layers3,
   Loader2,
+  LogOut,
   LocateFixed,
   MapPin,
   Navigation,
@@ -31,7 +32,7 @@ import { BottomSheet } from './BottomSheet';
 import { FabMenu, type FabMenuItem } from './FabMenu';
 import { UserChatbotPanel } from './UserChatbotPanel';
 import { UserRouteMap } from './UserRouteMap';
-import { useDriverLocations, type DriverLocation } from '../hooks/useDriverLocations';
+import { useDriverLocations } from '../hooks/useDriverLocations';
 import { useRideRequestStatus } from '../hooks/useRideRequestStatus';
 import { useSendRideRequest } from '../hooks/useSendRideRequest';
 import {
@@ -103,6 +104,10 @@ type FavoriteRoute = SearchRouteResult & {
   driverCode?: string;
   routeName?: string;
   savedAt: string;
+};
+
+type NavigationRouteResponse = {
+  coordinates?: unknown;
 };
 
 const normalizeStoredStop = (item: StoredStop): Parada | null => {
@@ -201,6 +206,17 @@ const distanceInKm = (a: { lat: number; lng: number }, b: { lat: number; lng: nu
 
   return radiusKm * 2 * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h));
 };
+
+const isLatLng = (value: unknown): value is [number, number] =>
+  Array.isArray(value) &&
+  value.length >= 2 &&
+  typeof value[0] === 'number' &&
+  typeof value[1] === 'number' &&
+  Number.isFinite(value[0]) &&
+  Number.isFinite(value[1]);
+
+const isLatLngList = (value: unknown): value is [number, number][] =>
+  Array.isArray(value) && value.length > 1 && value.every(isLatLng);
 
 async function getCurrentCoordinates() {
   if (Capacitor.isNativePlatform()) {
@@ -474,6 +490,18 @@ export function UserRouteSearch({ user, visiblePanels, onTogglePanel }: UserRout
   const [favoriteRoutes, setFavoriteRoutes] = useState<FavoriteRoute[]>([]);
   const [requestStatus, setRequestStatus] = useState('');
   const [currentRideRequestId, setCurrentRideRequestId] = useState<string | null>(null);
+  const [acceptedBusRouteCoordinates, setAcceptedBusRouteCoordinates] = useState<
+    [number, number][]
+  >([]);
+  const [acceptedUserWalkRouteCoordinates, setAcceptedUserWalkRouteCoordinates] = useState<
+    [number, number][]
+  >([]);
+  const [acceptedDropoffPoint, setAcceptedDropoffPoint] = useState<{
+    name: string;
+    lat: number;
+    lng: number;
+  } | null>(null);
+  const [isChoosingDropoffPoint, setIsChoosingDropoffPoint] = useState(false);
   const [paradas, setParadas] = useState<Parada[]>([]);
   const [newStop, setNewStop] = useState({
     titulo: '',
@@ -505,6 +533,17 @@ export function UserRouteSearch({ user, visiblePanels, onTogglePanel }: UserRout
   const rideRequestStatus = useRideRequestStatus(currentRideRequestId);
 
   const favoriteStops = useMemo(() => paradas.filter((parada) => parada.esFavorito), [paradas]);
+  const favoriteDriverCodes = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          favoriteRoutes
+            .map((route) => route.driverCode)
+            .filter((driverCode): driverCode is string => Boolean(driverCode)),
+        ),
+      ),
+    [favoriteRoutes],
+  );
   const selectedRoute = routes.find((route) => route.id === selectedRouteId) ?? routes[0];
   const nearbyDrivers = useMemo(() => {
     if (!selectedRoute) return driverLocations.drivers;
@@ -540,6 +579,79 @@ export function UserRouteSearch({ user, visiblePanels, onTogglePanel }: UserRout
         distanceInKm(selectedRoute.startPoint, { lat: b.latitud, lng: b.longitud }),
     )[0];
   }, [routeStopsNearDriverRoute, selectedRoute]);
+  const acceptedPickupPoint = useMemo(() => {
+    const request = rideRequestStatus.request;
+    if (!request || request.status !== 'accepted') return null;
+
+    const lat = request.stop_lat ?? request.user_lat ?? selectedRoute?.startPoint.lat;
+    const lng = request.stop_lng ?? request.user_lng ?? selectedRoute?.startPoint.lng;
+
+    if (typeof lat !== 'number' || typeof lng !== 'number') return null;
+
+    return {
+      name:
+        request.stop_name ?? request.nearest_stop ?? selectedRoute?.startPoint.name ?? 'Recogida',
+      lat,
+      lng,
+    };
+  }, [rideRequestStatus.request, selectedRoute]);
+  const acceptedDestinationPoint = useMemo(() => {
+    const request = rideRequestStatus.request;
+    if (!request || request.status !== 'accepted') return null;
+
+    const lat = request.destination_lat ?? selectedRoute?.endPoint.lat;
+    const lng = request.destination_lng ?? selectedRoute?.endPoint.lng;
+
+    if (typeof lat !== 'number' || typeof lng !== 'number') return null;
+
+    return {
+      name: request.destination_name ?? selectedRoute?.endPoint.name ?? 'Destino',
+      lat,
+      lng,
+    };
+  }, [rideRequestStatus.request, selectedRoute]);
+  const acceptedDriver = useMemo(() => {
+    const driverCode = rideRequestStatus.request?.driver_code ?? selectedDriver?.driverCode;
+    if (rideRequestStatus.request?.status !== 'accepted' || !driverCode) return null;
+
+    return (
+      driverLocations.drivers.find((driver) => driver.driverCode === driverCode) ??
+      selectedDriver ??
+      null
+    );
+  }, [driverLocations.drivers, rideRequestStatus.request, selectedDriver]);
+  const acceptedBusRouteQuery = useMemo(() => {
+    if (!acceptedDriver || !acceptedPickupPoint) return null;
+
+    const params = new URLSearchParams({
+      originLat: String(acceptedDriver.lat),
+      originLng: String(acceptedDriver.lng),
+      destinationLat: String(acceptedPickupPoint.lat),
+      destinationLng: String(acceptedPickupPoint.lng),
+    });
+
+    return `/api/navigation/route?${params.toString()}`;
+  }, [acceptedDriver, acceptedPickupPoint]);
+  const acceptedBusRouteFallback = useMemo(() => {
+    if (!acceptedDriver || !acceptedPickupPoint) return [];
+
+    return [
+      [acceptedDriver.lat, acceptedDriver.lng],
+      [acceptedPickupPoint.lat, acceptedPickupPoint.lng],
+    ] as [number, number][];
+  }, [acceptedDriver, acceptedPickupPoint]);
+  const acceptedUserWalkRouteQuery = useMemo(() => {
+    if (!acceptedDropoffPoint || !acceptedDestinationPoint) return null;
+
+    const params = new URLSearchParams({
+      originLat: String(acceptedDropoffPoint.lat),
+      originLng: String(acceptedDropoffPoint.lng),
+      destinationLat: String(acceptedDestinationPoint.lat),
+      destinationLng: String(acceptedDestinationPoint.lng),
+    });
+
+    return `/api/navigation/route?${params.toString()}`;
+  }, [acceptedDestinationPoint, acceptedDropoffPoint]);
   const selectedDriverDuration = selectedDriver?.estimatedDuration ?? selectedRoute?.duration ?? 0;
   const selectedDriverDistance = selectedDriver?.totalDistance ?? selectedRoute?.distance ?? 0;
   const handlePanelDragStart = (panel: FloatingPanelKey, event: PointerEvent<HTMLElement>) => {
@@ -725,6 +837,71 @@ export function UserRouteSearch({ user, visiblePanels, onTogglePanel }: UserRout
   };
 
   useEffect(() => {
+    if (!acceptedBusRouteQuery) {
+      const clearTimer = window.setTimeout(
+        () => setAcceptedBusRouteCoordinates(acceptedBusRouteFallback),
+        0,
+      );
+      return () => window.clearTimeout(clearTimer);
+    }
+
+    const controller = new AbortController();
+
+    async function loadAcceptedBusRoute() {
+      try {
+        const response = await fetch(acceptedBusRouteQuery!, { signal: controller.signal });
+        if (!response.ok) {
+          setAcceptedBusRouteCoordinates(acceptedBusRouteFallback);
+          return;
+        }
+
+        const payload = (await response.json()) as NavigationRouteResponse;
+        setAcceptedBusRouteCoordinates(
+          isLatLngList(payload.coordinates) ? payload.coordinates : acceptedBusRouteFallback,
+        );
+      } catch (routeError) {
+        if (routeError instanceof DOMException && routeError.name === 'AbortError') return;
+        setAcceptedBusRouteCoordinates(acceptedBusRouteFallback);
+      }
+    }
+
+    void loadAcceptedBusRoute();
+
+    return () => controller.abort();
+  }, [acceptedBusRouteFallback, acceptedBusRouteQuery]);
+
+  useEffect(() => {
+    if (!acceptedUserWalkRouteQuery) {
+      const clearTimer = window.setTimeout(() => setAcceptedUserWalkRouteCoordinates([]), 0);
+      return () => window.clearTimeout(clearTimer);
+    }
+
+    const controller = new AbortController();
+
+    async function loadAcceptedUserWalkRoute() {
+      try {
+        const response = await fetch(acceptedUserWalkRouteQuery!, { signal: controller.signal });
+        if (!response.ok) {
+          setAcceptedUserWalkRouteCoordinates([]);
+          return;
+        }
+
+        const payload = (await response.json()) as NavigationRouteResponse;
+        setAcceptedUserWalkRouteCoordinates(
+          isLatLngList(payload.coordinates) ? payload.coordinates : [],
+        );
+      } catch (routeError) {
+        if (routeError instanceof DOMException && routeError.name === 'AbortError') return;
+        setAcceptedUserWalkRouteCoordinates([]);
+      }
+    }
+
+    void loadAcceptedUserWalkRoute();
+
+    return () => controller.abort();
+  }, [acceptedUserWalkRouteQuery]);
+
+  useEffect(() => {
     const status = rideRequestStatus.request?.status;
 
     if (status !== 'completed') return;
@@ -732,36 +909,77 @@ export function UserRouteSearch({ user, visiblePanels, onTogglePanel }: UserRout
     const completeTimer = window.setTimeout(() => {
       setRequestStatus('');
       setCurrentRideRequestId(null);
+      setAcceptedDropoffPoint(null);
+      setIsChoosingDropoffPoint(false);
     }, 0);
 
     return () => window.clearTimeout(completeTimer);
   }, [rideRequestStatus.request?.status]);
 
-  const saveFavoriteRoute = async (driver = selectedDriver) => {
-    if (!selectedRoute && !driver) return;
+  useEffect(() => {
+    if (rideRequestStatus.request?.status === 'accepted') return;
 
-    const routeToSave: SearchRouteResult =
+    const resetTimer = window.setTimeout(() => {
+      setAcceptedDropoffPoint(null);
+      setIsChoosingDropoffPoint(false);
+    }, 0);
+
+    return () => window.clearTimeout(resetTimer);
+  }, [rideRequestStatus.request?.status, currentRideRequestId]);
+
+  const saveFavoriteRoute = async (driver = selectedDriver) => {
+    if (driver?.trackingOnly) {
+      setRequestStatus(
+        'Este bus solo esta en seguimiento. El conductor debe iniciar ruta en YaLlego.',
+      );
+      return;
+    }
+
+    const isDriverFavorite = Boolean(
+      driver && favoriteRoutes.some((route) => route.driverCode === driver.driverCode),
+    );
+
+    if (driver && isDriverFavorite) {
+      const nextFavoriteRoutes = favoriteRoutes.filter(
+        (route) => route.driverCode !== driver.driverCode,
+      );
+
+      setFavoriteRoutes(nextFavoriteRoutes);
+      window.localStorage.setItem(favoriteRoutesStorageKey, JSON.stringify(nextFavoriteRoutes));
+      window.dispatchEvent(new CustomEvent('yallego:favorite-routes-updated'));
+      setRequestStatus('Ruta quitada de favoritos.');
+      return;
+    }
+
+    const routeForFavorite =
       selectedRoute ??
-      ({
-        id: `driver-${driver?.driverCode ?? 'route'}-${Date.now()}`,
-        name: driver?.routeName ?? 'Ruta activa',
-        startPoint: {
-          name: driver?.routeName ?? 'Ruta activa',
-          lat: driver?.lat ?? 6.2442,
-          lng: driver?.lng ?? -75.5812,
-        },
-        endPoint: {
-          name: driver?.routeName ?? 'Ruta activa',
-          lat: driver?.lat ?? 6.2442,
-          lng: driver?.lng ?? -75.5812,
-        },
-        distance: driver?.totalDistance ?? 0,
-        duration: driver?.estimatedDuration ?? 0,
-        coordinates: driver ? [[driver.lat, driver.lng]] : [],
-      } satisfies SearchRouteResult);
+      (driver
+        ? {
+            id: `favorite-${driver.driverCode}`,
+            name: driver.routeName || `Bus ${driver.driverCode}`,
+            startPoint: {
+              name: driver.routeName || `Bus ${driver.driverCode}`,
+              lat: driver.lat,
+              lng: driver.lng,
+            },
+            endPoint: {
+              name: driver.routeName || `Bus ${driver.driverCode}`,
+              lat: driver.lat,
+              lng: driver.lng,
+            },
+            distance: 0,
+            duration: driver.estimatedDuration ?? 0,
+            coordinates: [[driver.lat, driver.lng]] as [number, number][],
+          }
+        : null);
+
+    if (!routeForFavorite) {
+      setRequestStatus('Primero elige un bus para guardarlo en favoritos.');
+      return;
+    }
 
     const favoriteRoute: FavoriteRoute = {
-      ...routeToSave,
+      ...routeForFavorite,
       driverCode: driver?.driverCode,
       routeName: driver?.routeName,
       savedAt: new Date().toISOString(),
@@ -770,8 +988,8 @@ export function UserRouteSearch({ user, visiblePanels, onTogglePanel }: UserRout
       favoriteRoute,
       ...favoriteRoutes.filter(
         (route) =>
-          route.startPoint.name !== routeToSave.startPoint.name ||
-          route.endPoint.name !== routeToSave.endPoint.name ||
+          route.startPoint.name !== routeForFavorite.startPoint.name ||
+          route.endPoint.name !== routeForFavorite.endPoint.name ||
           route.driverCode !== driver?.driverCode,
       ),
     ].slice(0, 20);
@@ -789,20 +1007,49 @@ export function UserRouteSearch({ user, visiblePanels, onTogglePanel }: UserRout
         created_at: new Date().toISOString(),
       });
     }
+
+    setRequestStatus('Ruta guardada en favoritos.');
   };
 
   const selectNearbyDriver = (driver: ActiveDriverLocation) => {
     setSelectedDriver(driver);
     setRequestStatus('');
     setCurrentRideRequestId(null);
+    setAcceptedDropoffPoint(null);
+    setIsChoosingDropoffPoint(false);
     setSelectedRouteId(selectedRoute?.id ?? routes[0]?.id ?? '');
   };
 
+  const handleChooseDropoffPoint = (point: { lat: number; lng: number }) => {
+    setAcceptedDropoffPoint({
+      name: 'Punto de bajada elegido',
+      lat: point.lat,
+      lng: point.lng,
+    });
+    setIsChoosingDropoffPoint(false);
+    setRequestStatus('Punto de bajada elegido. Sigue la mini ruta rosa hasta tu destino.');
+  };
+
   const requestSelectedBus = async (driver = selectedDriver) => {
-    if (!selectedRoute || !driver) {
+    if (!driver) {
       setRequestStatus('Primero elige un bus cercano.');
       return;
     }
+
+    if (!selectedRoute) {
+      setRequestStatus('Primero busca tu origen y destino para solicitar el bus.');
+      return;
+    }
+
+    if (driver.trackingOnly) {
+      setRequestStatus(
+        'Este bus solo esta en seguimiento. El conductor debe iniciar ruta en YaLlego.',
+      );
+      return;
+    }
+
+    setSelectedDriver(driver);
+    setRequestStatus('Enviando solicitud al conductor...');
 
     const requestId = await sendRideRequest.sendRideRequest({
       driver,
@@ -821,23 +1068,6 @@ export function UserRouteSearch({ user, visiblePanels, onTogglePanel }: UserRout
         ? `Solicitud enviada a ${driver.driverCode}. Espera la respuesta del conductor.`
         : sendRideRequest.error || 'No pude enviar la solicitud.',
     );
-  };
-
-  const toActiveDriverLocation = (driver: DriverLocation): ActiveDriverLocation => ({
-    driverCode: driver.driver_code,
-    driverId: Number(driver.driver_id) || null,
-    routeName: driver.route_name,
-    lat: driver.lat,
-    lng: driver.lng,
-    price: 3800,
-  });
-
-  const handleSendRideRequest = async (driver: DriverLocation) => {
-    await requestSelectedBus(toActiveDriverLocation(driver));
-  };
-
-  const handleSaveFavorite = async (driver: DriverLocation) => {
-    await saveFavoriteRoute(toActiveDriverLocation(driver));
   };
 
   const getCurrentLocationPlace = useCallback(async () => {
@@ -1050,9 +1280,9 @@ export function UserRouteSearch({ user, visiblePanels, onTogglePanel }: UserRout
     mobileRouteItems.find((item) => item.key === activeMobileSheet)?.label ?? 'YaLlego';
   const displayRequestStatus =
     rideRequestStatus.request?.status === 'accepted'
-      ? 'Tu bus viene 🚌'
+      ? 'El conductor acepto tu solicitud.'
       : rideRequestStatus.request?.status === 'rejected'
-        ? 'Bus no disponible'
+        ? 'El conductor rechazo la solicitud. Intenta con otro bus.'
         : requestStatus;
 
   return (
@@ -1073,14 +1303,21 @@ export function UserRouteSearch({ user, visiblePanels, onTogglePanel }: UserRout
           onSelectDriver={selectNearbyDriver}
           onRequestDriver={(driver) => void requestSelectedBus(driver)}
           onFavoriteDriverRoute={(driver) => void saveFavoriteRoute(driver)}
-          driverLocations={driverLocations.driverLocations}
-          onSendRideRequest={(driver) => void handleSendRideRequest(driver)}
-          onSaveFavorite={(driver) => void handleSaveFavorite(driver)}
+          favoriteDriverCodes={favoriteDriverCodes}
           requestedDriverCode={currentRideRequestId ? selectedDriver?.driverCode : undefined}
+          requestStatus={displayRequestStatus}
           isSendingRequest={sendRideRequest.isSending}
           routingStopId={routingStopId}
           selectedDriverCode={selectedDriver?.driverCode}
-          showRouteLines={visiblePanels.route && Boolean(selectedDriver)}
+          showRouteLines={false}
+          showRoutePoints={routes.length > 0}
+          acceptedBusRouteCoordinates={acceptedBusRouteCoordinates}
+          acceptedUserWalkRouteCoordinates={acceptedUserWalkRouteCoordinates}
+          acceptedPickupPoint={acceptedPickupPoint}
+          acceptedDropoffPoint={acceptedDropoffPoint}
+          acceptedDestinationPoint={acceptedDestinationPoint}
+          isChoosingDropoffPoint={isChoosingDropoffPoint}
+          onChooseDropoffPoint={handleChooseDropoffPoint}
         />
       </div>
 
@@ -1331,7 +1568,7 @@ export function UserRouteSearch({ user, visiblePanels, onTogglePanel }: UserRout
                 )}
                 {rideRequestStatus.request?.status === 'accepted' && (
                   <div className="mt-3 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-xs font-bold leading-5 text-emerald-800">
-                    <p className="text-sm font-black">Tu bus viene 🚌</p>
+                    <p className="text-sm font-black">El conductor acepto tu solicitud.</p>
                     <p className="mt-1">
                       Espera en{' '}
                       {rideRequestStatus.request.stop_name ??
@@ -1340,11 +1577,31 @@ export function UserRouteSearch({ user, visiblePanels, onTogglePanel }: UserRout
                         'la parada mas cercana'}
                       .
                     </p>
+                    {acceptedDestinationPoint && (
+                      <p className="mt-1">
+                        Elige donde quieres bajarte y te trazamos una mini ruta hasta{' '}
+                        {acceptedDestinationPoint.name}.
+                      </p>
+                    )}
                     <p className="mt-1">ETA: ~{formatDuration(selectedDriverDuration || 8)} min</p>
                     <button
                       type="button"
+                      onClick={() => {
+                        setIsChoosingDropoffPoint((current) => !current);
+                        setRequestStatus(
+                          isChoosingDropoffPoint
+                            ? 'Seleccion de bajada cancelada.'
+                            : 'Toca el mapa donde quieres bajarte.',
+                        );
+                      }}
+                      className="mt-3 h-10 w-full rounded-lg bg-violet-600 text-xs font-black text-white transition hover:bg-violet-700"
+                    >
+                      {isChoosingDropoffPoint ? 'Cancelar bajada' : 'Elegir donde bajarme'}
+                    </button>
+                    <button
+                      type="button"
                       onClick={() => void rideRequestStatus.completeRequest()}
-                      className="mt-3 h-10 w-full rounded-lg bg-emerald-600 text-xs font-black text-white"
+                      className="mt-2 h-10 w-full rounded-lg bg-emerald-600 text-xs font-black text-white"
                     >
                       Ya subi al bus
                     </button>
@@ -1955,6 +2212,15 @@ export function UserRouteSearch({ user, visiblePanels, onTogglePanel }: UserRout
             <div className="rounded-lg border border-dashed border-slate-300 bg-white p-4 text-sm font-semibold text-slate-500">
               Tu actividad real de rutas se mostrara cuando el historial este conectado.
             </div>
+            <form action="/api/auth/logout" method="post">
+              <button
+                type="submit"
+                className="flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-slate-950 text-sm font-black text-white transition hover:bg-rose-700"
+              >
+                <LogOut size={17} />
+                Cerrar sesion
+              </button>
+            </form>
           </div>
         )}
       </BottomSheet>

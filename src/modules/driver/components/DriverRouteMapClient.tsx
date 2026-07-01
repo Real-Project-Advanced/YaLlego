@@ -145,30 +145,6 @@ const createPickupMarkerIcon = () =>
     popupAnchor: [0, -28],
   });
 
-const createRouteTargetIcon = (label: string, color: string) =>
-  L.divIcon({
-    className: 'driver-route-target-marker-icon',
-    html: `
-      <div style="
-        width: 42px; height: 42px;
-        display: grid; place-items: center;
-        border-radius: 16px 16px 16px 4px;
-        border: 3px solid white;
-        background: ${color};
-        color: white;
-        font-size: 18px;
-        font-weight: 900;
-        box-shadow: 0 14px 30px rgba(15,23,42,0.28);
-        transform: rotate(-45deg);
-      ">
-        <span style="display: block; transform: rotate(45deg);">${label}</span>
-      </div>
-    `,
-    iconSize: [42, 42],
-    iconAnchor: [21, 36],
-    popupAnchor: [0, -34],
-  });
-
 function MapSizeInvalidator() {
   const map = useMap();
 
@@ -346,19 +322,6 @@ export default function DriverRouteMapClient({
               </Marker>
             )}
           </>
-        )}
-
-        {isRouteActive && routeTarget && (
-          <Marker
-            pane="driver-position-pane"
-            position={[routeTarget[0], routeTarget[1]]}
-            icon={createRouteTargetIcon(
-              routePhase === 'returning' ? 'R' : 'L',
-              routePhase === 'returning' ? '#0369a1' : '#dc2626',
-            )}
-          >
-            <Popup>{routePhase === 'returning' ? 'Punto de regreso' : 'Punto de llegada'}</Popup>
-          </Marker>
         )}
 
         {acceptedPickups.map((pickup) => (

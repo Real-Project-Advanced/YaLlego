@@ -2,7 +2,16 @@
 
 import type { PointerEvent, ReactNode } from 'react';
 import { useEffect, useState } from 'react';
-import { Bell, Bot, Heart, History, MapPinned, PanelRightClose, UserRound } from 'lucide-react';
+import {
+  Bell,
+  Bot,
+  Heart,
+  History,
+  LogOut,
+  MapPinned,
+  PanelRightClose,
+  UserRound,
+} from 'lucide-react';
 import type { UserPayload } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 import { isMissingSupabaseTableError } from '@/modules/shared/services/localRealtimeFallback';
@@ -323,6 +332,15 @@ export function UserFloatingDock({ user }: UserFloatingDockProps) {
             <div className="mt-4 rounded-lg border border-dashed border-slate-300 bg-white p-4 text-sm font-semibold text-slate-500">
               Tu actividad real de rutas se mostrara cuando el historial este conectado.
             </div>
+            <form action="/api/auth/logout" method="post" className="mt-4">
+              <button
+                type="submit"
+                className="flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-slate-950 text-sm font-black text-white transition hover:bg-rose-700"
+              >
+                <LogOut size={17} />
+                Cerrar sesion
+              </button>
+            </form>
           </section>
         </DockPanelShell>
       )}

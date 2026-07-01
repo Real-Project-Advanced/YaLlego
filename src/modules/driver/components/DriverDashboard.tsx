@@ -100,10 +100,10 @@ export function DriverDashboard({ profile, user }: DriverDashboardProps) {
   );
   const automaticDistanceKm = trackingDistance || selectedRoute.distanceKm;
   const automaticEstimatedDuration = estimateMinutes(automaticDistanceKm);
-  const savedEstimatedDuration = Number(estimatedDuration);
-  const routeEstimatedDuration =
-    Number.isFinite(savedEstimatedDuration) && savedEstimatedDuration > 0
-      ? savedEstimatedDuration
+  const manualEstimatedDuration = Number(estimatedDuration);
+  const savedEstimatedDuration =
+    Number.isFinite(manualEstimatedDuration) && manualEstimatedDuration > 0
+      ? Math.round(manualEstimatedDuration)
       : automaticEstimatedDuration;
 
   const tracking = useDriverTracking({
@@ -258,7 +258,7 @@ export function DriverDashboard({ profile, user }: DriverDashboardProps) {
         driver_id: String(profile.driverId),
         driver_code: profile.driverCode,
         route_name: selectedRoute.name,
-        estimated_duration: routeEstimatedDuration,
+        estimated_duration: savedEstimatedDuration,
         total_distance: automaticDistanceKm,
         price: 3800,
         updated_at: new Date().toISOString(),
@@ -464,9 +464,13 @@ export function DriverDashboard({ profile, user }: DriverDashboardProps) {
                   min="1"
                   value={estimatedDuration}
                   onChange={(event) => setEstimatedDuration(event.target.value)}
-                  placeholder={`${automaticEstimatedDuration}`}
-                  className="mt-2 h-12 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm font-bold text-slate-950 outline-none focus:border-[#0369a1] focus:ring-2 focus:ring-sky-100"
+                  placeholder={`Automatico: ${automaticEstimatedDuration}`}
+                  className="mt-2 h-12 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm font-bold text-slate-950 outline-none transition focus:border-[#0369a1] focus:ring-2 focus:ring-sky-100"
                 />
+                <span className="mt-2 block text-xs font-bold text-slate-500">
+                  Se guardara {savedEstimatedDuration} min. Dejalo vacio para usar el calculo
+                  automatico.
+                </span>
               </label>
               <div className="grid grid-cols-2 gap-3">
                 <div className="rounded-lg bg-slate-50 p-3">

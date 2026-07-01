@@ -14,6 +14,13 @@ export type UserRideRequest = {
   driver_code?: string | null;
   nearest_stop?: string | null;
   stop_name?: string | null;
+  stop_lat?: number | null;
+  stop_lng?: number | null;
+  user_lat?: number | null;
+  user_lng?: number | null;
+  destination_name?: string | null;
+  destination_lat?: number | null;
+  destination_lng?: number | null;
   status: 'pending' | 'accepted' | 'rejected' | 'completed' | string;
   created_at?: string | null;
   updated_at?: string | null;

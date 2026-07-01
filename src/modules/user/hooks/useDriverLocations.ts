@@ -39,10 +39,21 @@ type DriverRouteRow = {
   price?: number | null;
 };
 
+const activeDriverMaxAgeMs = 10 * 60 * 1000;
+
 const getDriverIdFromCode = (driverCode: string) => {
   const driverId = Number(driverCode.replace(/\D/g, ''));
 
   return Number.isFinite(driverId) && driverId > 0 ? driverId : null;
+};
+
+const isRecentDriverLocation = (updatedAt?: string | null) => {
+  if (!updatedAt) return false;
+
+  const timestamp = new Date(updatedAt).getTime();
+  if (!Number.isFinite(timestamp)) return false;
+
+  return Date.now() - timestamp <= activeDriverMaxAgeMs;
 };
 
 const isDriverLocationsUnavailable = (error: { code?: string; message?: string }) =>
@@ -126,7 +137,8 @@ export function useDriverLocations() {
       const { data: locationData, error: locationError } = await supabase
         .from('driver_locations')
         .select('*')
-        .eq('is_active', true);
+        .eq('is_active', true)
+        .gte('updated_at', new Date(Date.now() - activeDriverMaxAgeMs).toISOString());
 
       if (locationError) {
         if (isDriverLocationsUnavailable(locationError)) {
@@ -161,6 +173,7 @@ export function useDriverLocations() {
           row.driver_id &&
           row.driver_code &&
           row.route_name &&
+          isRecentDriverLocation(row.updated_at) &&
           typeof row.lat === 'number' &&
           typeof row.lng === 'number',
       )
@@ -195,6 +208,7 @@ export function useDriverLocations() {
         (row) =>
           row.driver_code &&
           row.route_name &&
+          isRecentDriverLocation(row.updated_at) &&
           typeof row.lat === 'number' &&
           typeof row.lng === 'number',
       )

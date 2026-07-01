@@ -3,7 +3,16 @@
 import { Heart, Info, Navigation, Route } from 'lucide-react';
 import L from 'leaflet';
 import { useEffect, useMemo, useState, type PointerEvent } from 'react';
-import { MapContainer, Marker, Pane, Polyline, Popup, TileLayer, useMap } from 'react-leaflet';
+import {
+  MapContainer,
+  Marker,
+  Pane,
+  Polyline,
+  Popup,
+  TileLayer,
+  useMap,
+  useMapEvents,
+} from 'react-leaflet';
 
 import 'leaflet/dist/leaflet.css';
 import { medellinBounds } from '@/lib/maps/medellin-bounds';
@@ -14,7 +23,6 @@ import {
   type Parada,
   type SearchRouteResult,
 } from './UserRouteMapShared';
-import type { DriverLocation } from '../hooks/useDriverLocations';
 
 type UserRouteMapClientProps = {
   routes: SearchRouteResult[];
@@ -28,14 +36,33 @@ type UserRouteMapClientProps = {
   onSelectDriver?: (driver: ActiveDriverLocation) => void;
   onRequestDriver?: (driver: ActiveDriverLocation) => void;
   onFavoriteDriverRoute?: (driver: ActiveDriverLocation) => void;
-  driverLocations?: DriverLocation[];
-  onSendRideRequest?: (driver: DriverLocation) => void;
-  onSaveFavorite?: (driver: DriverLocation) => void;
+  favoriteDriverCodes?: string[];
   requestedDriverCode?: string;
+  requestStatus?: string;
   isSendingRequest?: boolean;
   routingStopId?: string;
   selectedDriverCode?: string;
   showRouteLines?: boolean;
+  showRoutePoints?: boolean;
+  acceptedBusRouteCoordinates?: [number, number][];
+  acceptedUserWalkRouteCoordinates?: [number, number][];
+  acceptedPickupPoint?: {
+    name: string;
+    lat: number;
+    lng: number;
+  } | null;
+  acceptedDropoffPoint?: {
+    name: string;
+    lat: number;
+    lng: number;
+  } | null;
+  acceptedDestinationPoint?: {
+    name: string;
+    lat: number;
+    lng: number;
+  } | null;
+  isChoosingDropoffPoint?: boolean;
+  onChooseDropoffPoint?: (point: { lat: number; lng: number }) => void;
 };
 
 type TileProvider = 'osm' | 'carto';
@@ -149,6 +176,24 @@ function MapSizeInvalidator() {
   return null;
 }
 
+function DropoffPointSelector({
+  isChoosing,
+  onChoose,
+}: {
+  isChoosing: boolean;
+  onChoose?: (point: { lat: number; lng: number }) => void;
+}) {
+  useMapEvents({
+    click: (event) => {
+      if (!isChoosing) return;
+
+      onChoose?.({ lat: event.latlng.lat, lng: event.latlng.lng });
+    },
+  });
+
+  return null;
+}
+
 export default function UserRouteMapClient({
   routes,
   selectedRouteId,
@@ -160,12 +205,21 @@ export default function UserRouteMapClient({
   onSelectDriver,
   onRequestDriver,
   onFavoriteDriverRoute,
-  driverLocations = [],
+  favoriteDriverCodes = [],
   requestedDriverCode,
+  requestStatus = '',
   isSendingRequest = false,
   routingStopId,
   selectedDriverCode,
   showRouteLines = false,
+  showRoutePoints = false,
+  acceptedBusRouteCoordinates = [],
+  acceptedUserWalkRouteCoordinates = [],
+  acceptedPickupPoint = null,
+  acceptedDropoffPoint = null,
+  acceptedDestinationPoint = null,
+  isChoosingDropoffPoint = false,
+  onChooseDropoffPoint,
 }: UserRouteMapClientProps) {
   const selectedRoute = routes.find((route) => route.id === selectedRouteId) ?? routes[0];
   const routeStartsAtCurrentLocation = isSameMapPoint(currentLocation, selectedRoute?.startPoint);
@@ -174,28 +228,7 @@ export default function UserRouteMapClient({
   const [popupOffset, setPopupOffset] = useState({ x: 0, y: 0 });
   const [isDraggingPopup, setIsDraggingPopup] = useState(false);
   const tileLayer = tileLayers[tileProvider];
-  const visibleDrivers = useMemo(() => {
-    const byCode = new Map<string, ActiveDriverLocation>();
-
-    for (const driver of activeDrivers) {
-      byCode.set(driver.driverCode, driver);
-    }
-
-    for (const driver of driverLocations) {
-      if (byCode.has(driver.driver_code)) continue;
-
-      byCode.set(driver.driver_code, {
-        driverCode: driver.driver_code,
-        driverId: Number(driver.driver_id) || null,
-        routeName: driver.route_name,
-        lat: driver.lat,
-        lng: driver.lng,
-        price: 3800,
-      });
-    }
-
-    return Array.from(byCode.values());
-  }, [activeDrivers, driverLocations]);
+  const visibleDrivers = useMemo(() => activeDrivers, [activeDrivers]);
 
   const openStopPopup = (parada: Parada, event: L.LeafletMouseEvent) => {
     if (activeStop?.id !== parada.id) {
@@ -245,6 +278,7 @@ export default function UserRouteMapClient({
         zoomControl={false}
       >
         <MapSizeInvalidator />
+        <DropoffPointSelector isChoosing={isChoosingDropoffPoint} onChoose={onChooseDropoffPoint} />
         <TileLayer
           key={tileProvider}
           attribution={tileLayer.attribution}
@@ -256,6 +290,8 @@ export default function UserRouteMapClient({
         />
 
         <Pane name="user-route-line-pane" style={{ zIndex: 420 }} />
+        <Pane name="accepted-bus-route-line-pane" style={{ zIndex: 455 }} />
+        <Pane name="accepted-user-route-line-pane" style={{ zIndex: 465 }} />
         <Pane name="user-stop-pane" style={{ zIndex: 520 }} />
         <Pane name="user-bus-pane" style={{ zIndex: 760 }} />
 
@@ -275,35 +311,115 @@ export default function UserRouteMapClient({
                 }}
               />
             )}
-            <Marker
-              pane="user-stop-pane"
-              position={[selectedRoute.startPoint.lat, selectedRoute.startPoint.lng]}
-              icon={createPointIcon(
-                'linear-gradient(135deg,#06b6d4,#0891b2)',
-                routeStartsAtCurrentLocation ? 'Mi ubicacion actual' : 'Origen',
-              )}
-            >
-              <Popup>
-                <div className="space-y-1 text-sm">
-                  <strong>{selectedRoute.startPoint.name}</strong>
-                  <p>{routeStartsAtCurrentLocation ? 'Mi ubicacion actual' : 'Origen'}</p>
-                </div>
-              </Popup>
-            </Marker>
+            {showRoutePoints && (
+              <>
+                <Marker
+                  pane="user-stop-pane"
+                  position={[selectedRoute.startPoint.lat, selectedRoute.startPoint.lng]}
+                  icon={createPointIcon(
+                    'linear-gradient(135deg,#06b6d4,#0891b2)',
+                    routeStartsAtCurrentLocation ? 'Mi ubicacion actual' : 'Origen',
+                  )}
+                >
+                  <Popup>
+                    <div className="space-y-1 text-sm">
+                      <strong>{selectedRoute.startPoint.name}</strong>
+                      <p>{routeStartsAtCurrentLocation ? 'Mi ubicacion actual' : 'Origen'}</p>
+                    </div>
+                  </Popup>
+                </Marker>
 
-            <Marker
-              pane="user-stop-pane"
-              position={[selectedRoute.endPoint.lat, selectedRoute.endPoint.lng]}
-              icon={createPointIcon('linear-gradient(135deg,#f43f5e,#be123c)', 'Destino')}
-            >
-              <Popup>
-                <div className="space-y-1 text-sm">
-                  <strong>{selectedRoute.endPoint.name}</strong>
-                  <p>Destino</p>
-                </div>
-              </Popup>
-            </Marker>
+                <Marker
+                  pane="user-stop-pane"
+                  position={[selectedRoute.endPoint.lat, selectedRoute.endPoint.lng]}
+                  icon={createPointIcon('linear-gradient(135deg,#f43f5e,#be123c)', 'Destino')}
+                >
+                  <Popup>
+                    <div className="space-y-1 text-sm">
+                      <strong>{selectedRoute.endPoint.name}</strong>
+                      <p>Destino</p>
+                    </div>
+                  </Popup>
+                </Marker>
+              </>
+            )}
           </>
+        )}
+
+        {acceptedBusRouteCoordinates.length > 1 && (
+          <Polyline
+            pane="accepted-bus-route-line-pane"
+            positions={acceptedBusRouteCoordinates}
+            pathOptions={{
+              color: '#047857',
+              opacity: 1,
+              weight: 8,
+              lineCap: 'round',
+              lineJoin: 'round',
+              className: 'accepted-bus-route-glow',
+            }}
+          />
+        )}
+
+        {acceptedUserWalkRouteCoordinates.length > 1 && (
+          <Polyline
+            pane="accepted-user-route-line-pane"
+            positions={acceptedUserWalkRouteCoordinates}
+            pathOptions={{
+              color: '#db2777',
+              opacity: 0.95,
+              weight: 6,
+              dashArray: '10 10',
+              lineCap: 'round',
+              lineJoin: 'round',
+              className: 'accepted-user-route-glow',
+            }}
+          />
+        )}
+
+        {acceptedPickupPoint && (
+          <Marker
+            pane="user-stop-pane"
+            position={[acceptedPickupPoint.lat, acceptedPickupPoint.lng]}
+            icon={createPointIcon('#047857', 'Recogida')}
+          >
+            <Popup>
+              <div className="space-y-1 text-sm">
+                <strong>{acceptedPickupPoint.name}</strong>
+                <p>El conductor acepto. Espera el bus en esta parada.</p>
+              </div>
+            </Popup>
+          </Marker>
+        )}
+
+        {acceptedDropoffPoint && (
+          <Marker
+            pane="user-stop-pane"
+            position={[acceptedDropoffPoint.lat, acceptedDropoffPoint.lng]}
+            icon={createPointIcon('#7c3aed', 'Bajada')}
+          >
+            <Popup>
+              <div className="space-y-1 text-sm">
+                <strong>{acceptedDropoffPoint.name}</strong>
+                <p>Bajate aqui y sigue la mini ruta rosa hasta tu destino.</p>
+              </div>
+            </Popup>
+          </Marker>
+        )}
+
+        {acceptedDestinationPoint && (
+          <Marker
+            pane="user-stop-pane"
+            position={[acceptedDestinationPoint.lat, acceptedDestinationPoint.lng]}
+            icon={createPointIcon('#db2777', 'Destino')}
+          >
+            <Popup>
+              <div className="space-y-1 text-sm">
+                <strong>{acceptedDestinationPoint.name}</strong>
+                <p>Bajate cerca de este punto y sigue la mini ruta al destino.</p>
+              </div>
+            </Popup>
+          </Marker>
         )}
 
         {paradas.map((parada) => {
@@ -404,6 +520,8 @@ export default function UserRouteMapClient({
         {visibleDrivers.map((driver) => {
           const isSelected = selectedDriverCode === driver.driverCode;
           const isRequested = requestedDriverCode === driver.driverCode;
+          const isFavorite = favoriteDriverCodes.includes(driver.driverCode);
+          const canRequestDriver = !driver.trackingOnly;
           const eta = driver.estimatedDuration ?? selectedRoute?.duration ?? 8;
           const price = driver.price ?? 3800;
 
@@ -433,35 +551,53 @@ export default function UserRouteMapClient({
                       ${new Intl.NumberFormat('es-CO').format(price)}
                     </span>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      onSelectDriver?.(driver);
-                      onRequestDriver?.(driver);
-                    }}
-                    disabled={isRequested || isSendingRequest}
-                    className="flex h-10 w-full items-center justify-center rounded-lg bg-emerald-600 px-3 text-xs font-black text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-emerald-300"
-                  >
-                    {isRequested
-                      ? 'Solicitud enviada ✓'
-                      : isSendingRequest
-                        ? 'Enviando'
-                        : 'Solicitar este bus'}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      onSelectDriver?.(driver);
-                      onFavoriteDriverRoute?.(driver);
-                    }}
-                    className="flex h-10 w-full items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-xs font-black text-slate-800 transition hover:border-rose-300 hover:text-rose-700"
-                  >
-                    <Heart size={15} />
-                    Guardar en favoritos
-                  </button>
+                  {canRequestDriver ? (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          onSelectDriver?.(driver);
+                          onRequestDriver?.(driver);
+                        }}
+                        disabled={isRequested || isSendingRequest}
+                        className="flex h-10 w-full items-center justify-center rounded-lg bg-emerald-600 px-3 text-xs font-black text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-emerald-300"
+                      >
+                        {isRequested
+                          ? 'Solicitud enviada ✓'
+                          : isSendingRequest
+                            ? 'Enviando'
+                            : 'Solicitar este bus'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          onSelectDriver?.(driver);
+                          onFavoriteDriverRoute?.(driver);
+                        }}
+                        className={`flex h-10 w-full items-center justify-center gap-2 rounded-lg border px-3 text-xs font-black transition ${
+                          isFavorite
+                            ? 'border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100'
+                            : 'border-slate-200 bg-white text-slate-800 hover:border-rose-300 hover:text-rose-700'
+                        }`}
+                      >
+                        <Heart size={15} fill={isFavorite ? 'currentColor' : 'none'} />
+                        {isFavorite ? 'Quitar de favoritos' : 'Guardar en favoritos'}
+                      </button>
+                    </>
+                  ) : (
+                    <p className="rounded-lg bg-amber-50 p-2 text-xs font-bold text-amber-800">
+                      Bus en seguimiento. El conductor debe iniciar ruta en YaLlego para aceptar
+                      solicitudes.
+                    </p>
+                  )}
                   {isSelected && (
                     <p className="rounded-lg bg-emerald-50 p-2 text-xs font-bold text-emerald-700">
                       Bus seleccionado
+                    </p>
+                  )}
+                  {(isSelected || isRequested) && requestStatus && (
+                    <p className="rounded-lg bg-slate-50 p-2 text-xs font-bold leading-5 text-slate-600">
+                      {requestStatus}
                     </p>
                   )}
                 </div>
@@ -473,10 +609,26 @@ export default function UserRouteMapClient({
 
       <div className="pointer-events-none absolute inset-0 z-1 bg-[linear-gradient(180deg,rgba(255,255,255,0.10),rgba(255,255,255,0)_24%,rgba(8,145,178,0.08))]" />
 
+      {isChoosingDropoffPoint && (
+        <div className="pointer-events-none absolute left-1/2 top-4 z-[900] w-[min(calc(100%-24px),360px)] -translate-x-1/2 rounded-lg border border-violet-200 bg-white/95 p-3 text-center text-xs font-black text-violet-800 shadow-xl shadow-slate-950/10">
+          Toca el mapa donde quieres bajarte
+        </div>
+      )}
+
       <style jsx global>{`
         .route-glow {
           filter: drop-shadow(0 0 16px rgba(8, 145, 178, 0.52))
             drop-shadow(0 8px 12px rgba(15, 23, 42, 0.18));
+        }
+
+        .accepted-bus-route-glow {
+          filter: drop-shadow(0 0 16px rgba(4, 120, 87, 0.46))
+            drop-shadow(0 8px 12px rgba(15, 23, 42, 0.18));
+        }
+
+        .accepted-user-route-glow {
+          filter: drop-shadow(0 0 14px rgba(219, 39, 119, 0.38))
+            drop-shadow(0 8px 12px rgba(15, 23, 42, 0.16));
         }
 
         .custom-leaflet-icon,
